@@ -10,7 +10,6 @@ class Margem:
             x2 = random.randint(5, 195)
             y2 = random.randint(1305, 1495)
             for x in range(202):
-                print(x)
                 for y in range (751):
                     tela.set_at((x, y), cor)
                     tela.set_at((x2, y2), cor2)
