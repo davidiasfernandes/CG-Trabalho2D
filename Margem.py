@@ -1,23 +1,18 @@
+import pygame
 import random
+from Cores import MARGEM
 class Margem:
-    
+
+    largura = 200
+    altura = 750
+    cor = MARGEM
+
     def __init__(self, x, y):
             self.x = x
             self.y = y
+            self.superficie = pygame.Surface((Margem.largura, Margem.altura))
 
-    def desenhar_margem(self, tela, cor,  x, y, cor2):
-        if (x == 0):
-            x2 = random.randint(5, 195)
-            y2 = random.randint(1305, 1495)
-            for x in range(202):
-                for y in range (751):
-                    tela.set_at((x, y), cor)
-                    tela.set_at((x2, y2), cor2)
-                 
-            
-        if (x == 1300):
-            x2 = random.randint(5, 195)
-            y2 = random.randint(1305, 1495)
-            for i in range(200):
-                for n in range (751):
-                    tela.set_at((x+i, y+n), cor)
+    def draw(self):
+        for i in range (Margem.largura):
+            for n in range(Margem.altura):
+                self.superficie.set_at((i, n), Margem.cor)

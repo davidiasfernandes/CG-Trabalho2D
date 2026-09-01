@@ -1,4 +1,5 @@
 import pygame
+from Plataforma import SPEED, RAIO
 
 class Sapo:
     def __init__(self, x, y):
@@ -23,3 +24,18 @@ class Sapo:
                         (self.x + x, self.y + y),
                         cor
                     )
+
+    def move_alongside(self, plat):
+        if plat.direction == 1:
+            self.x -= 1 * SPEED
+        elif plat.direction == 0:
+            self.x += 1 * SPEED
+
+    def check_underneath(self, plats):
+        for plat in plats:
+            if ((self.x - plat.x) ** 2 + (self.y - plat.y) ** 2) <= (RAIO) ** 2:
+                return plat
+            
+        return None
+        
+    
