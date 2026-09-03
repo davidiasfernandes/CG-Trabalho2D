@@ -1,6 +1,3 @@
-
-
-
 import pygame
 from Plataforma import Plataforma
 from Margem import Margem
@@ -64,14 +61,12 @@ while rodando:
     if carregando_pulo:
         jump_count += 1 * JUMP_SPEED
         tela.blit(texto, (player.x, player.y -jump_count))
-    print(margem1.superficie)
    
-
-
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
+
     for plat in plats:
-        plat.draw(tela)
+        plat.desenhar_plat(tela)
         plat.move_x_asis()
     
     under = player.check_underneath(plats)

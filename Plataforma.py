@@ -1,11 +1,13 @@
-from Cores import VERDE_MUSGO
+from Cores import VERDE_MUSGO, VERDE_ESCURO
 import random
 SPEED = 3
 RAIO = 40
 class Plataforma:
     raio = RAIO
     cor = VERDE_MUSGO
+    cor2 = VERDE_ESCURO
     speed = SPEED
+    borda = 100
 
     def __init__(self, x, y):
         self.x = x
@@ -13,14 +15,16 @@ class Plataforma:
         self.direction = random.randint(0,1)
 
         
-    def desenhar_plat(self, tela, a, b, raio, cor):
-        for x in range (a - raio, a + raio + 1):
-            for y in range (b - raio, b + raio + 1):
+    def desenhar_plat(self, tela):
+        for x in range (self.x - Plataforma.raio, self.x + Plataforma.raio + 1):
+            for y in range (self.y - Plataforma.raio, self.y + Plataforma.raio + 1):
 
-                distancia = (x - a) ** 2 + (y - b) ** 2
+                distancia = (x - self.x) ** 2 + (y - self.y) ** 2
 
-                if distancia <= raio ** 2:
-                    tela.set_at((x,y), cor)
+                if distancia < (Plataforma.raio ** 2)- Plataforma.borda:
+                    tela.set_at((x,y), Plataforma.cor)
+                if (distancia <= Plataforma.raio ** 2) and (distancia > (Plataforma.raio ** 2)- Plataforma.borda):
+                    tela.set_at((x,y), Plataforma.cor2)
 
     def draw (self, tela):
         for a in range(int(self.x - Plataforma.raio), int(self.x + Plataforma.raio + 1)):
