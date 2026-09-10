@@ -15,7 +15,7 @@ def calculate_plats(initial_lenght, initial_height, screen_height, space_between
 LARGURA, ALTURA = 1500, 750
 JUMP_SPEED = 8
 INITIAL_X, INITIAL_Y = 750, 650
-
+LIMITE_QUEDA = ALTURA + 100
 
 pygame.init()
 tela = pygame.display.set_mode((LARGURA, ALTURA))
@@ -30,59 +30,89 @@ margem2 = Margem(LARGURA-200, 0)
 margem1.draw()
 margem2.draw()
 player = Sapo(INITIAL_X -30, INITIAL_Y - 25)
-
+player.pousar(plats[0])
 
 carregando_pulo = False
 jump_count = 0
+MAX_JUMP = 30
+FORCA_MULT = 15
+
 rodando = True
-
-
 while rodando:
-    jump_force = 0
-   
     for evento in pygame.event.get():
-
-        if (evento.type == pygame.QUIT):
+        if evento.type == pygame.QUIT:
             rodando = False
         elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
-            carregando_pulo = True
+            if not player.pulando:     
+                carregando_pulo = True
         elif evento.type == pygame.KEYUP and evento.key == pygame.K_SPACE:
-            carregando_pulo = False
-            player.y -= jump_count
-            jump_count = 0
+            if carregando_pulo:
+                carregando_pulo = False
+                forca = jump_count * FORCA_MULT
+                player.pular(forca)
+                jump_count = 0
+
+    if pygame.key.get_pressed()[pygame.K_0]:
+        player.x, player.y = 720, 625
+        player.no_ar = False
+        player.vel_y = 0
 
     tela.fill(AZUL_AGUA)
 
-    if pygame.key.get_pressed()[pygame.K_0]:
-        player.x = 720
-        player.y = 625
+    if carregando_pulo and jump_count < MAX_JUMP:
+        jump_count += 1
 
+    plataforma_atual = player.check_underneath(plats)
+    
+    for plat in plats:
+        if plat == plataforma_atual:
+            plat.speed = 1.5
+       
+        plat.move_x_asis()
+        plat.desenhar_plat(tela)
 
-    if carregando_pulo:
-        jump_count += 1 * JUMP_SPEED
-        tela.blit(texto, (player.x, player.y -jump_count))
-   
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
 
-    for plat in plats:
-        plat.desenhar_plat(tela)
-        plat.move_x_asis()
-    
-    under = player.check_underneath(plats)
-    if under != None:
-        player.move_alongside(under)
-    else:
-        player.x = INITIAL_X -30
-        player.y = INITIAL_Y - 25
+    player.atualizar_pulo()
 
-    texto = fonte.render("x", True, (255, 255, 255))
-    
+    if player.pulando:
+
+        player.atualizar_pulo()
+
+    else:
+
+        if player.plataforma_atual is not None:
+            
+            player.move_alongside(player.plataforma_atual)
+
+    if player.pulando:
+
+        player.atualizar_pulo()
+
+        plataforma = player.check_underneath(plats)
+
+        if plataforma is not None:
+            player.pousar(plataforma)
+        else:       
+            player.x, player.y = 720, 625
+            player.no_ar = False
+            player.vel_y = 0
+
+
+    if player.y > LIMITE_QUEDA:
+        player.x, player.y = INITIAL_X - 30, INITIAL_Y - 25
+        player.no_ar = False
+        player.vel_y = 0
+        player.plataforma_atual = plats[0]
 
     player.desenhar_sap(tela)
-    
-    pygame.display.flip() 
+
+    if carregando_pulo:
+        texto = fonte.render("x", True, (255, 255, 255))
+        tela.blit(texto, (player.x + 25, player.y - jump_count * 3))
+
+    pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
-
