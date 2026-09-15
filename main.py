@@ -112,6 +112,8 @@ while rodando:
         texto = fonte.render("x", True, (255, 255, 255))
         tela.blit(texto, (player.x + 25, player.y - jump_count * 3))
 
+    print(player.pulando)
+
     pygame.display.flip()
     clock.tick(60)
 

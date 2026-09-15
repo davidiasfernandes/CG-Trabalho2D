@@ -7,7 +7,7 @@ class Sapo:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-
+        self.pulando = False
         self.imagem = pygame.image.load("sapo.png").convert_alpha()
 
         self.imagem = pygame.transform.scale(
@@ -32,7 +32,7 @@ class Sapo:
             self.x -= 1 * plat.speed
         elif plat.direction == 0:
             self.x += 1 * plat.speed
-        print(plat.speed)
+        
 
     def check_underneath(self, plats):
         for plat in plats:
@@ -50,6 +50,8 @@ class Sapo:
             self.plataforma_atual = None
 
             self.destino_y = self.y - forca
+
+        self.pulando = False
 
     def pousar(self, plat):
         self.pulando = False
