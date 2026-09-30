@@ -1,168 +1,165 @@
 import pygame
-from Plataforma import Plataforma
+from Menu import desenhar_menu, verificar_click
+from Requires.Functions import desenhar_poligono
+from Requires.Functions import scanline_fill_gradiente
+from Plataforma import Plataforma, SPEED
 from Margem import Margem
 from Sapo import Sapo
-from Cores import AZUL_AGUA
+from Cores import AZUL_AGUA, VERDE_ESCURO
+
 
 def calculate_plats(initial_lenght, initial_height, screen_height, space_between):
+    # Empilha plataformas de baixo para cima, até o espaço acima ficar igual à margem de baixo
     margin = screen_height - initial_height
     intervalo = initial_height - margin
-    quantidade = int(intervalo//space_between) + 1
-
+    quantidade = int(intervalo / space_between) + 1
     return [Plataforma(initial_lenght, initial_height - i * space_between) for i in range(quantidade)]
-    
 
+
+# Configurações
 LARGURA, ALTURA = 1500, 750
-JUMP_SPEED = 8
 INITIAL_X, INITIAL_Y = 750, 650
-LIMITE_QUEDA = ALTURA + 100
 MAX_JUMP = 30
-FORCA_MULT = 15
+TEMPO_CARGA = 1  # segundos segurando para ir de zero até a força máxima
+PASSO_CARGA = MAX_JUMP / (TEMPO_CARGA * 60)  # quanto a carga muda por frame (60 FPS)
+FORCA_MULT = 14
+VELOCIDADE_AFOGAMENTO = 8
+ALTURA_CARREGAMENTO = 100
 
 pygame.init()
 tela = pygame.display.set_mode((LARGURA, ALTURA))
 clock = pygame.time.Clock()
-fonte = pygame.font.Font(None, 30)
+fonte = pygame.font.SysFont("Gagalin", 18)
 
+status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
 plats = calculate_plats(INITIAL_X, INITIAL_Y, ALTURA, 275)
-plats[0].direction = -1
-margem1 = Margem(0, 0)
-margem2 = Margem(LARGURA-200, 0)
+plats[0].speed = 0
 
+margem1 = Margem(0, 0)
+margem2 = Margem(LARGURA - 200, 0)
 margem1.draw()
 margem2.draw()
 
-
 player = Sapo(INITIAL_X, INITIAL_Y)
 player.pousar(plats[0])
+plataforma_atual = plats[0]
 
 carregando_pulo = False
 jump_count = 0
+carga_dir = 1  # 1 = carga subindo, -1 = descendo
+afundando = False
+alpha_sapo = 255
 
 
-rodando = True
+def resetar_sapo():
+    global plataforma_atual, carregando_pulo, jump_count, afundando, alpha_sapo
+    player.pousar(plats[0])
+    plataforma_atual = plats[0]
+    carregando_pulo = False
+    jump_count = 0
+    afundando = False
+    alpha_sapo = 255
 
-while rodando:
-    # ==========================
-    # EVENTOS
-    # ==========================
+
+def jogo():
+    global carregando_pulo, jump_count, carga_dir, afundando, alpha_sapo, plataforma_atual
     for evento in pygame.event.get():
-
-        # ==========================
-        # QUIT GAME
-        # ==========================
         if evento.type == pygame.QUIT:
             rodando = False
-
-        # ======================================================================================================================
-        # KEYDOWN
-        #   Identifica spacebar pressionado -> Ativa booleano de controle de pulo 'carregando_pulo' se player não estiver no ar 
-        # ======================================================================================================================
         elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
-            if not player.pulando:     
+            if not player.pulando and not afundando:
                 carregando_pulo = True
-
-        # =======================================================================================
-        # KEYUP
-        #   Identifica spacebar liberado -> 
-        #       Desativa booleano de controle de pulo 'carregando_pulo'
-        #       Calcula distância a ser cobrida no pulo e atribui na variável 'força'
-        #       Chama método de movimento de player com parâmetro adequado 'player.pular(força)'
-        #       Reseta variável de acumulador de pulo 'jump_count' para futuras movimentações
-        # =======================================================================================
-        
+                jump_count = 0
+                carga_dir = 1
         elif evento.type == pygame.KEYUP and evento.key == pygame.K_SPACE:
             if carregando_pulo:
                 carregando_pulo = False
-                forca = jump_count * FORCA_MULT
-                player.pular(forca)
+                player.pular(jump_count * FORCA_MULT)
                 jump_count = 0
 
-    
-    # ============================================================================================================
-    # RESET
-    #   Identifica tecla 0 pressionada -> Reseta posição do player para a primeira plataforma, propósito de testes
-    #   TODO: Mover método para dentro da classe Sapo
-    # ============================================================================================================
     if pygame.key.get_pressed()[pygame.K_0]:
-        player.x = INITIAL_X - Sapo.regulate_x
-        player.y = INITIAL_Y - Sapo.regulate_y
-        player.no_ar = False
-        player.vel_y = 0
+        resetar_sapo()
 
+    # A carga sobe até o máximo e desce até zero, repetindo enquanto o espaço estiver pressionado
+    if carregando_pulo:
+        jump_count += PASSO_CARGA * carga_dir
+        if jump_count >= MAX_JUMP:
+            jump_count = MAX_JUMP
+            carga_dir = -1
+        elif jump_count <= 0:
+            jump_count = 0
+            carga_dir = 1
 
-    # ==========================
-    # DESENHOS
-    # ==========================
-    tela.fill(AZUL_AGUA) # Pinta tela inteira
-
-
-    # Pecorrendo array de plataformas
+    # Movimento das plataformas: a inicial fica parada e a que tem o sapo anda mais devagar
     for plat in plats:
-        if plat == plataforma_atual:
+        if plat == plats[0]:
+            plat.speed = 0
+        elif plat == plataforma_atual:
             plat.speed = 1.5
-        plat.move_x_asis() # Movimento horizontal 
-        plat.desenhar_plat(tela) # Desenho da plataforma
-
-
-    # Exibição das margens 
-    tela.blit(margem1.superficie, (margem1.x, margem1.y))
-    tela.blit(margem2.superficie, (margem2.x, margem2.y))
-
-    # ==========================
-    # MOVIMENTAÇÃO
-    # ==========================
-
-    # -------------------------------------------------------------------------------------------------------------
-    # JUMP_COUNT
-    #   carregando_pulo: Booleano de controle, ativação por spacebar (Ver @Eventos)
-    #   jump_count: Variável base responsável pelo movimento, escala com o tempo em que spacebar está pressionado
-    #   MAX_JUMP: Constante que delimita o teto de jump_count, maior distância coberta em um único salto
-    # -------------------------------------------------------------------------------------------------------------
-    if carregando_pulo and jump_count <= MAX_JUMP:
-        jump_count += 1
-
-    plataforma_atual = player.check_underneath(plats)
-
-    player.atualizar_pulo()
+        else:
+            plat.speed = SPEED
+        if plat.speed > 0:
+            plat.move_x_asis()
 
     if player.pulando:
-
         player.atualizar_pulo()
+        # Quando o pulo termina, pousa se houver plataforma embaixo; senão afunda no lugar
+        if not player.pulando:
+            # Pousa se o centro do sapo estiver dentro do círculo de alguma plataforma
+            plat = player.check_underneath(plats)
+            if plat is not None:
+                player.pousar(plat)
+                plataforma_atual = plat
+            else:
+                player.plataforma_atual = None
+                afundando = True
+                alpha_sapo = 255
 
-    else:
+    # Afunda ficando transparente; ao sumir, volta para a plataforma inicial
+    if afundando:
+        alpha_sapo -= VELOCIDADE_AFOGAMENTO
+        if alpha_sapo <= 0:
+            resetar_sapo()
 
-        if player.plataforma_atual is not None:
-            
+    # Sapo parado acompanha o movimento da plataforma
+    if not player.pulando and not afundando:
+        if player.plataforma_atual is not None and player.plataforma_atual.speed > 0:
             player.move_alongside(player.plataforma_atual)
 
-    if player.pulando:
+    tela.fill(AZUL_AGUA)
 
-        player.atualizar_pulo()
+    # Renderização: plataformas, margens, sapo e carregamento do pulo (barra vertical com gradiente de vermelho para verde)
+    if carregando_pulo:
+        poligono = [(player.x + 30, player.y + 2), (player.x + 30, player.y - ALTURA_CARREGAMENTO/2), (player.x + 30, player.y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player.y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player.y - ALTURA_CARREGAMENTO/2), (player.x + 55, player.y + 2)]
+        scanline_fill_gradiente(tela, poligono, [(255, 0, 0), (0, 255, 0), (255, 0, 0), (255, 0, 0), (0, 255, 0), (255, 0, 0)])
+        desenhar_poligono(tela, poligono, VERDE_ESCURO)
 
-        plataforma = player.check_underneath(plats)
-
-        if plataforma is not None:
-            player.pousar(plataforma)
-        else:       
-            player.x, player.y = 720, 625
-            player.no_ar = False
-            player.vel_y = 0
-
-
-    if player.y > LIMITE_QUEDA:
-        player.x, player.y = INITIAL_X - 30, INITIAL_Y - 25
-        player.no_ar = False
-        player.vel_y = 0
-        player.plataforma_atual = plats[0]
-
-    player.desenhar_sap(tela)
+    for plat in plats:
+        plat.desenhar_plat(tela)
+    tela.blit(margem1.superficie, (margem1.x, margem1.y))
+    tela.blit(margem2.superficie, (margem2.x, margem2.y))
+    player.desenhar_sap(tela, alpha_sapo)
 
     if carregando_pulo:
-        texto = fonte.render("x", True, (255, 255, 255))
-        tela.blit(texto, (player.x + 25, player.y - jump_count * 3))
+        texto = fonte.render("    ------", True, (255, 255, 255))
+        tela.blit(texto, (player.x + 19, player.y - 5 - jump_count * 3))
 
-    print(player.pulando)
+rodando = True
+while rodando:
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            rodando = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1 and status == 1:
+            status = verificar_click(pygame.mouse.get_pos(), status)
+        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE and status in (2, 3):
+            status = 1
+
+    if status == 1:
+        desenhar_menu()
+    elif status == 2:
+        jogo()
+    elif status == 4:
+        rodando = False
 
     pygame.display.flip()
     clock.tick(60)
