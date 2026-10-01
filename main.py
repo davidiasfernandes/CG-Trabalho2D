@@ -2,22 +2,31 @@ import pygame
 from Menu import desenhar_menu, verificar_click
 from Requires.Functions import desenhar_poligono
 from Requires.Functions import scanline_fill_gradiente
-from Plataforma import Plataforma, SPEED
+from Plataforma import RAIO, Plataforma, SPEED
 from Margem import Margem
 from Sapo import Sapo
 from Cores import AZUL_AGUA, VERDE_ESCURO
 
 
-def calculate_plats(initial_lenght, initial_height, screen_height, space_between):
-    # Empilha plataformas de baixo para cima, até o espaço acima ficar igual à margem de baixo
-    margin = screen_height - initial_height
-    intervalo = initial_height - margin
-    quantidade = int(intervalo / space_between) + 1
-    return [Plataforma(initial_lenght, initial_height - i * space_between) for i in range(quantidade)]
+def calculate_plats(initial_lenght, initial_height, quantidade, space_between):
+
+    return [
+        Plataforma(
+            initial_lenght,
+            initial_height - i * space_between
+        )
+        for i in range(quantidade)
+    ]
 
 
 # Configurações
 LARGURA, ALTURA = 1500, 750
+# Câmera
+camera_y = 0
+camera_alvo = 0
+VELOCIDADE_CAMERA = 12
+VELOCIDADE_CAMERA_RETORNO = 25
+
 INITIAL_X, INITIAL_Y = 750, 650
 MAX_JUMP = 30
 TEMPO_CARGA = 1  # segundos segurando para ir de zero até a força máxima
@@ -32,7 +41,7 @@ clock = pygame.time.Clock()
 fonte = pygame.font.SysFont("Gagalin", 18)
 
 status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
-plats = calculate_plats(INITIAL_X, INITIAL_Y, ALTURA, 275)
+plats = calculate_plats(INITIAL_X, INITIAL_Y, 10, 275)
 plats[0].speed = 0
 
 margem1 = Margem(0, 0)
@@ -51,16 +60,62 @@ afundando = False
 alpha_sapo = 255
 fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
 
+def atualizar_camera():
+
+    global camera_y
+
+    if camera_y < camera_alvo:
+
+        camera_y += VELOCIDADE_CAMERA
+
+        if camera_y > camera_alvo:
+            camera_y = camera_alvo
+
+    elif camera_y > camera_alvo:
+
+        camera_y -= VELOCIDADE_CAMERA_RETORNO
+
+        if camera_y < camera_alvo:
+            camera_y = camera_alvo
+
+def verificar_camera(plat):
+
+    global camera_alvo
+
+    indice = plats.index(plat)
+
+    # A cada plataforma ímpar:
+    # P3 -> revela P4 e P5
+    # P5 -> revela P6 e P7
+
+    if indice >= 2 and indice % 2 == 0:
+
+        proxima_ultima = min(indice + 2, len(plats) - 1)
+
+        # Queremos que a nova última plataforma
+        # fique na mesma região superior da tela.
+        camera_alvo = plats[proxima_ultima].y - 100
 
 def resetar_sapo():
-    global plataforma_atual, carregando_pulo, jump_count, afundando, alpha_sapo
+
+    global plataforma_atual
+    global carregando_pulo
+    global jump_count
+    global afundando
+    global alpha_sapo
+    global camera_alvo
+
     player.pousar(plats[0])
+
     plataforma_atual = plats[0]
+
     carregando_pulo = False
     jump_count = 0
+
     afundando = False
     alpha_sapo = 255
 
+    camera_alvo = 0
 
 def jogo(eventos):
     global carregando_pulo, jump_count, carga_dir, afundando, alpha_sapo, plataforma_atual
@@ -109,6 +164,7 @@ def jogo(eventos):
             if plat is not None:
                 player.pousar(plat)
                 plataforma_atual = plat
+                verificar_camera(plat)
             else:
                 player.plataforma_atual = None
                 afundando = True
@@ -125,23 +181,30 @@ def jogo(eventos):
         if player.plataforma_atual is not None and player.plataforma_atual.speed > 0:
             player.move_alongside(player.plataforma_atual)
 
+    atualizar_camera()
+
     tela.fill(AZUL_AGUA)
 
     # Renderização: plataformas, margens, sapo e carregamento do pulo (barra vertical com gradiente de vermelho para verde)
     if carregando_pulo:
-        poligono = [(player.x + 30, player.y + 2), (player.x + 30, player.y - ALTURA_CARREGAMENTO/2), (player.x + 30, player.y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player.y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player.y - ALTURA_CARREGAMENTO/2), (player.x + 55, player.y + 2)]
+        player_tela_y = player.y - camera_y
+        poligono = [(player.x + 30, player_tela_y + 2), (player.x + 30, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 30, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 55, player_tela_y + 2)]
         scanline_fill_gradiente(tela, poligono, [(255, 0, 0), (0, 255, 0), (255, 0, 0), (255, 0, 0), (0, 255, 0), (255, 0, 0)])
         desenhar_poligono(tela, poligono, VERDE_ESCURO)
 
     for plat in plats:
-        plat.desenhar_plat(tela)
+        tela_y = plat.y - camera_y
+        # Só desenha se estiver próximo da área visível.
+        if -RAIO <= tela_y <= ALTURA + RAIO:
+            plat.desenhar_plat(tela, camera_y)
+
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
-    player.desenhar_sap(tela, alpha_sapo)
+    player.desenhar_sap(tela, alpha_sapo, camera_y)
 
     if carregando_pulo:
         texto = fonte.render("    ------", True, (255, 255, 255))
-        tela.blit(texto, (player.x + 19, player.y - 5 - jump_count * 3))
+        tela.blit(texto, (player.x + 19, player_tela_y - 5 - jump_count * 3))
 
 rodando = True
 while rodando:
