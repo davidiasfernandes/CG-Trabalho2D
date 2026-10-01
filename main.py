@@ -49,6 +49,7 @@ jump_count = 0
 carga_dir = 1  # 1 = carga subindo, -1 = descendo
 afundando = False
 alpha_sapo = 255
+fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
 
 
 def resetar_sapo():
@@ -61,12 +62,10 @@ def resetar_sapo():
     alpha_sapo = 255
 
 
-def jogo():
+def jogo(eventos):
     global carregando_pulo, jump_count, carga_dir, afundando, alpha_sapo, plataforma_atual
-    for evento in pygame.event.get():
-        if evento.type == pygame.QUIT:
-            rodando = False
-        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+    for evento in eventos:
+        if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
             if not player.pulando and not afundando:
                 carregando_pulo = True
                 jump_count = 0
@@ -146,7 +145,8 @@ def jogo():
 
 rodando = True
 while rodando:
-    for evento in pygame.event.get():
+    eventos = pygame.event.get()
+    for evento in eventos:
         if evento.type == pygame.QUIT:
             rodando = False
         elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1 and status == 1:
@@ -157,7 +157,11 @@ while rodando:
     if status == 1:
         desenhar_menu()
     elif status == 2:
-        jogo()
+        jogo(eventos)
+    elif status == 3:
+        tela.fill((0, 0, 0))
+        ajuda = fonte_ajuda.render("Pressione ESPAÇO para carregar o pulo \n\nCuidado com o pulo, ele pode ser mais perigoso do que parece \n\nO mais próximo que chegar ao verde, maior sua chance de pousar na vitória régia da frente!", True, (255, 255, 255))
+        tela.blit(ajuda, ((LARGURA - ajuda.get_width()) // 2, ALTURA // 4))
     elif status == 4:
         rodando = False
 
