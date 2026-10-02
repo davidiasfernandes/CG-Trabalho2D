@@ -1,6 +1,9 @@
+import math
+
 import pygame
 from Plataforma import RAIO
 
+ESCALA_MAX = 1.4
 
 def escala(sx, sy):
     return [[sx, 0, 0], 
@@ -28,15 +31,26 @@ class Sapo:
         self.y = y
         self.largura = 90
         self.altura = 90
-        self.pixels = escalar_pixels(pygame.image.load("./Assets/sapo.png"), self.largura, self.altura)
+        self.imagem = pygame.image.load("./Assets/sapo.png")
+        self.cache = {}  # (largura, altura) -> lista de pixels
+        self.fator = 1.0
+        self.y_inicial = y
         self.pulando = False
         self.destino_y = y
         self.plataforma_atual = None
 
+    def obter_pixels(self, larg, alt):
+        if (larg, alt) not in self.cache:
+            self.cache[(larg, alt)] = escalar_pixels(self.imagem, larg, alt)
+        return self.cache[(larg, alt)]
+    
     def desenhar_sap(self, tela, camera_y=0):
-        tela_x = int(self.x)
-        tela_y = int(self.y - camera_y)
-        for x, y, cor in self.pixels:
+        larg = round(self.largura * self.fator)
+        alt = round(self.altura * self.fator)
+        # Cresce a partir do centro, então desloca metade do que aumentou
+        tela_x = int(self.x) - (larg - self.largura) // 2
+        tela_y = int(self.y - camera_y) - (alt - self.altura) // 2
+        for x, y, cor in self.obter_pixels(larg, alt):
             pos_x = tela_x + x
             pos_y = tela_y + y
             if 0 <= pos_x < tela.get_width() and 0 <= pos_y < tela.get_height():
@@ -62,10 +76,12 @@ class Sapo:
         if not self.pulando:
             self.pulando = True
             self.plataforma_atual = None
+            self.y_inicial = self.y
             self.destino_y = self.y - forca
 
     def pousar(self, plat):
         self.pulando = False
+        self.fator = 1.0
         self.plataforma_atual = plat
         self.x = plat.x - self.largura // 2
         self.y = plat.y - self.altura // 2
@@ -78,3 +94,9 @@ class Sapo:
         else:
             self.y = self.destino_y
             self.pulando = False
+        total = self.y_inicial - self.destino_y
+        if self.pulando and total > 0:
+            progresso = (self.y_inicial - self.y) / total
+            self.fator = 1 + (ESCALA_MAX - 1) * math.sin(math.pi * progresso)
+        else:
+            self.fator = 1.0

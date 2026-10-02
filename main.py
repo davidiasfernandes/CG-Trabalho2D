@@ -52,6 +52,7 @@ player = Sapo(INITIAL_X, INITIAL_Y)
 player.pousar(plats[0])
 plataforma_atual = plats[0]
 
+pontos = 0
 carregando_pulo = False
 jump_count = 0
 carga_dir = 1  # 1 = carga subindo, -1 = descendo
@@ -101,6 +102,7 @@ def resetar_sapo():
     global jump_count
     global afundando
     global camera_alvo
+    global pontos
 
     player.pousar(plats[0])
 
@@ -110,11 +112,11 @@ def resetar_sapo():
     jump_count = 0
 
     afundando = False
-
+    pontos = 0
     camera_alvo = 0
 
 def jogo(eventos):
-    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual
+    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual, pontos
 
     
     for evento in eventos:
@@ -164,6 +166,7 @@ def jogo(eventos):
                 player.pousar(plat)
                 plataforma_atual = plat
                 verificar_camera(plat)
+                pontos = max(pontos, plats.index(plat))
             else:
                 player.plataforma_atual = None
                 afundando = True
@@ -201,6 +204,9 @@ def jogo(eventos):
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
     player.desenhar_sap(tela, camera_y)
+
+    texto_pontos = fonte.render(f"Escore: {pontos}", True, (255, 255, 255))
+    tela.blit(texto_pontos, (20, 20))
 
     if carregando_pulo:
         texto = fonte.render("    ------", True, (255, 255, 255))
