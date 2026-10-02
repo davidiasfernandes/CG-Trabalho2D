@@ -119,6 +119,8 @@ def resetar_sapo():
 
 def jogo(eventos):
     global carregando_pulo, jump_count, carga_dir, afundando, alpha_sapo, plataforma_atual
+
+    
     for evento in eventos:
         if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
             if not player.pulando and not afundando:
@@ -130,6 +132,7 @@ def jogo(eventos):
                 carregando_pulo = False
                 player.pular(jump_count * FORCA_MULT)
                 jump_count = 0
+
 
     if pygame.key.get_pressed()[pygame.K_0]:
         resetar_sapo()
@@ -157,7 +160,7 @@ def jogo(eventos):
 
     if player.pulando:
         player.atualizar_pulo()
-        # Quando o pulo termina, pousa se houver plataforma embaixo; senão afunda no lugar
+        # Quando o pulo termina, pousa se houver plataforma embaixo, senão afunda
         if not player.pulando:
             # Pousa se o centro do sapo estiver dentro do círculo de alguma plataforma
             plat = player.check_underneath(plats)
@@ -185,11 +188,15 @@ def jogo(eventos):
 
     tela.fill(AZUL_AGUA)
 
-    # Renderização: plataformas, margens, sapo e carregamento do pulo (barra vertical com gradiente de vermelho para verde)
+    ##### Renderização: plataformas, margens, sapo e carregamento do pulo (barra vertical com gradiente de vermelho para verde)
+    if not carregando_pulo and not player.pulando and not afundando:
+        aviso = fonte.render("Pressione 'ESPAÇO' para carregar o pulo", True, (255, 255, 255))
+        tela.blit(aviso, ((LARGURA - aviso.get_width()) // 2, ALTURA - 30))
+
     if carregando_pulo:
         player_tela_y = player.y - camera_y
         poligono = [(player.x + 30, player_tela_y + 2), (player.x + 30, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 30, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 55, player_tela_y + 2)]
-        scanline_fill_gradiente(tela, poligono, [(255, 0, 0), (0, 255, 0), (255, 0, 0), (255, 0, 0), (0, 255, 0), (255, 0, 0)])
+        scanline_fill_gradiente(tela, poligono, [(0, 255, 0), (255, 255, 0), (255, 0, 0), (255, 0, 0), (255, 255, 0), (0, 255, 0)])
         desenhar_poligono(tela, poligono, VERDE_ESCURO)
 
     for plat in plats:
@@ -223,7 +230,9 @@ while rodando:
         jogo(eventos)
     elif status == 3:
         tela.fill((0, 0, 0))
-        ajuda = fonte_ajuda.render("Pressione ESPAÇO para carregar o pulo \n\nCuidado com o pulo, ele pode ser mais perigoso do que parece \n\nO mais próximo que chegar ao verde, maior sua chance de pousar na vitória régia da frente!", True, (255, 255, 255))
+        ajuda_titulo = fonte_ajuda.render("Ajuda: \n\n\n", True, (0, 255, 0))
+        tela.blit(ajuda_titulo, ((LARGURA - ajuda_titulo.get_width()) // 2, ALTURA // 8))
+        ajuda = fonte_ajuda.render("Pressione e segure 'ESPAÇO' para carregar o pulo. \n\nCuidado! É mais perigoso do que parece... \n\nA barra branca indica a força de seu pulo, estude para aumentar sua chance de pousar na vitória régia da frente! \n\n", True, (255, 255, 255))
         tela.blit(ajuda, ((LARGURA - ajuda.get_width()) // 2, ALTURA // 4))
     elif status == 4:
         rodando = False
