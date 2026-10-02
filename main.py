@@ -32,7 +32,6 @@ MAX_JUMP = 30
 TEMPO_CARGA = 1  # segundos segurando para ir de zero até a força máxima
 PASSO_CARGA = MAX_JUMP / (TEMPO_CARGA * 60)  # quanto a carga muda por frame (60 FPS)
 FORCA_MULT = 14
-VELOCIDADE_AFOGAMENTO = 8
 ALTURA_CARREGAMENTO = 100
 
 pygame.init()
@@ -57,7 +56,6 @@ carregando_pulo = False
 jump_count = 0
 carga_dir = 1  # 1 = carga subindo, -1 = descendo
 afundando = False
-alpha_sapo = 255
 fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
 
 def atualizar_camera():
@@ -102,7 +100,6 @@ def resetar_sapo():
     global carregando_pulo
     global jump_count
     global afundando
-    global alpha_sapo
     global camera_alvo
 
     player.pousar(plats[0])
@@ -113,12 +110,11 @@ def resetar_sapo():
     jump_count = 0
 
     afundando = False
-    alpha_sapo = 255
 
     camera_alvo = 0
 
 def jogo(eventos):
-    global carregando_pulo, jump_count, carga_dir, afundando, alpha_sapo, plataforma_atual
+    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual
 
     
     for evento in eventos:
@@ -171,13 +167,10 @@ def jogo(eventos):
             else:
                 player.plataforma_atual = None
                 afundando = True
-                alpha_sapo = 255
 
-    # Afunda ficando transparente; ao sumir, volta para a plataforma inicial
+    # Afunda e volta para a plataforma inicial
     if afundando:
-        alpha_sapo -= VELOCIDADE_AFOGAMENTO
-        if alpha_sapo <= 0:
-            resetar_sapo()
+        resetar_sapo()
 
     # Sapo parado acompanha o movimento da plataforma
     if not player.pulando and not afundando:
@@ -207,7 +200,7 @@ def jogo(eventos):
 
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
-    player.desenhar_sap(tela, alpha_sapo, camera_y)
+    player.desenhar_sap(tela, camera_y)
 
     if carregando_pulo:
         texto = fonte.render("    ------", True, (255, 255, 255))

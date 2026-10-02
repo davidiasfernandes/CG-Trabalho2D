@@ -3,7 +3,7 @@ from Cores import MARGEM
 
 
 class Margem:
-    largura = 400
+    largura = 200
     altura = 750
     cor = MARGEM
 
