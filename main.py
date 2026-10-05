@@ -3,7 +3,7 @@ from Menu import desenhar_menu, verificar_click
 from Requires.Functions import aplica_transformacao, desenhar_circulo, desenhar_poligono, janela_viewport, preencher_regiao
 from Requires.Functions import scanline_fill_gradiente, desenhar_viewport
 from Plataforma import RAIO, Plataforma, SPEED
-from Margem import Margem
+from Margem import LARGURA_MARGEM, Margem
 from Sapo import Sapo
 from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
 
@@ -59,7 +59,7 @@ def conteudo_mini():
 plats[0].speed = 0
 
 margem1 = Margem(0, 0)
-margem2 = Margem(LARGURA - 200, 0)
+margem2 = Margem(LARGURA - LARGURA_MARGEM, 0)
 margem1.draw()
 margem2.draw()
 

@@ -1,6 +1,7 @@
 import random
 
 from Cores import VERDE_MUSGO, VERDE_ESCURO
+from Margem import Margem, LARGURA_MARGEM
 from Requires.Functions import setPixel
 
 SPEED = 3.5
@@ -48,10 +49,10 @@ class Plataforma:
     def change_direction(self, largura):
 
         # Inverte a direção ao encostar nas margens
-        if self.direction == 1 and self.x <= 205 + Plataforma.raio:
+        if self.direction == 1 and self.x <= LARGURA_MARGEM + 5 + Plataforma.raio:
             self.direction = 0
 
-        elif self.direction == 0 and self.x >= 1295 - Plataforma.raio:
+        elif self.direction == 0 and self.x >= largura - LARGURA_MARGEM - 5 - Plataforma.raio:
             self.direction = 1
 
     def move_x_asis(self):
