@@ -1,12 +1,11 @@
 import pygame
 from Menu import desenhar_menu, verificar_click
-from Requires.Functions import desenhar_poligono
-from Requires.Functions import scanline_fill_gradiente
+from Requires.Functions import aplica_transformacao, desenhar_circulo, desenhar_poligono, janela_viewport, preencher_regiao
+from Requires.Functions import scanline_fill_gradiente, desenhar_viewport
 from Plataforma import RAIO, Plataforma, SPEED
 from Margem import Margem
 from Sapo import Sapo
-from Cores import AZUL_AGUA, VERDE_ESCURO
-
+from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
 
 def calculate_plats(initial_lenght, initial_height, quantidade, space_between):
 
@@ -17,7 +16,6 @@ def calculate_plats(initial_lenght, initial_height, quantidade, space_between):
         )
         for i in range(quantidade)
     ]
-
 
 # Configurações
 LARGURA, ALTURA = 1500, 750
@@ -41,6 +39,23 @@ fonte = pygame.font.SysFont("Gagalin", 18)
 
 status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
 plats = calculate_plats(INITIAL_X, INITIAL_Y, 10, 275)
+
+janela = (0, min(p.y for p in plats) - RAIO, LARGURA, ALTURA)
+MINI_L = 120
+MINI_A = round(MINI_L * (janela[3] - janela[1]) / (janela[2] - janela[0]))
+viewport = (10, 50, 10 + MINI_L, 50 + MINI_A)
+M_MINI = janela_viewport(janela, viewport)
+
+def conteudo_mini():
+    r = Plataforma.raio * M_MINI[0][0]
+    for p in plats:
+        (cx, cy), = aplica_transformacao(M_MINI, [(p.x, p.y)])
+        desenhar_circulo(tela, cx, cy, r, (120, 255, 80))
+    (sx, sy), = aplica_transformacao(M_MINI, [player.get_centro()])
+    desenhar_circulo(tela, sx, sy, 3, BRANCO)
+    cam = [(0, camera_y), (LARGURA, camera_y), (LARGURA, camera_y + ALTURA), (0, camera_y + ALTURA)]
+    desenhar_poligono(tela, aplica_transformacao(M_MINI, cam), BRANCO)
+
 plats[0].speed = 0
 
 margem1 = Margem(0, 0)
@@ -126,6 +141,10 @@ def jogo(eventos):
                 carregando_pulo = True
                 jump_count = 0
                 carga_dir = 1
+        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_x:
+            if carregando_pulo:
+                carregando_pulo = False
+                jump_count = 0
         elif evento.type == pygame.KEYUP and evento.key == pygame.K_SPACE:
             if carregando_pulo:
                 carregando_pulo = False
@@ -195,6 +214,8 @@ def jogo(eventos):
         poligono = [(player.x + 30, player_tela_y + 2), (player.x + 30, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 30, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y + 10 - ALTURA_CARREGAMENTO), (player.x + 55, player_tela_y - ALTURA_CARREGAMENTO/2), (player.x + 55, player_tela_y + 2)]
         scanline_fill_gradiente(tela, poligono, [(0, 255, 0), (255, 255, 0), (255, 0, 0), (255, 0, 0), (255, 255, 0), (0, 255, 0)])
         desenhar_poligono(tela, poligono, VERDE_ESCURO)
+        texto = fonte.render("    ------", True, (0, 0, 0))
+        tela.blit(texto, (player.x + 19, player_tela_y - 5 - jump_count * 3))  
 
     for plat in plats:
         tela_y = plat.y - camera_y
@@ -209,9 +230,7 @@ def jogo(eventos):
     texto_pontos = fonte.render(f"Escore: {pontos}", True, (255, 255, 255))
     tela.blit(texto_pontos, (20, 20))
 
-    if carregando_pulo:
-        texto = fonte.render("    ------", True, (255, 255, 255))
-        tela.blit(texto, (player.x + 19, player_tela_y - 5 - jump_count * 3))
+    desenhar_viewport(tela, viewport, BRANCO, conteudo_mini)
 
 rodando = True
 while rodando:
@@ -232,7 +251,7 @@ while rodando:
         tela.fill((0, 0, 0))
         ajuda_titulo = fonte_ajuda.render("Ajuda: \n\n\n", True, (0, 255, 0))
         tela.blit(ajuda_titulo, ((LARGURA - ajuda_titulo.get_width()) // 2, ALTURA // 8))
-        ajuda = fonte_ajuda.render("Pressione e segure 'ESPAÇO' para carregar o pulo. \n\nCuidado! É mais perigoso do que parece... \n\nA barra branca indica a força de seu pulo, estude para aumentar sua chance de pousar na vitória régia da frente! \n\n", True, (255, 255, 255))
+        ajuda = fonte_ajuda.render("Pressione e segure 'ESPAÇO' para carregar o pulo. \n\nCuidado! É mais perigoso do que parece... \n\nA barra preta indica a força de seu pulo, estude para aumentar sua chance de pousar na vitória régia da frente! \n\nPara cancelar o pulo, pressione 'X'.\n\n", True, (255, 255, 255))
         tela.blit(ajuda, ((LARGURA - ajuda.get_width()) // 2, ALTURA // 4))
         ajuda2 = fonte_ajuda2.render("\nClique \"Esc\" para voltar ao menu.", True, (0, 100, 255))
         tela.blit(ajuda2, ((LARGURA - ajuda2.get_width()) // 2, ALTURA // 4 + 300))

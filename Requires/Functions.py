@@ -1,7 +1,19 @@
+import math
 
+from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
 def setPixel(superficie, x, y, cor):
+    x, y = int(x), int(y)
+    if clip_atual:
+        xmin, ymin, xmax, ymax = clip_atual
+        if not (xmin <= x <= xmax and ymin <= y <= ymax):
+            return
     if 0 <= x < superficie.get_width() and 0 <= y < superficie.get_height():
         superficie.set_at((x, y), cor)
+
+def preencher_regiao(superficie, xmin, ymin, xmax, ymax, cor):
+    for y in range(int(ymin), int(ymax) + 1):
+        for x in range(int(xmin), int(xmax) + 1):
+            setPixel(superficie, x, y, cor)
 
 def bresenham(superficie, x0, y0, x1, y1, cor):
     steep = abs(y1 - y0) > abs(x1 - x0)
@@ -35,16 +47,12 @@ def bresenham(superficie, x0, y0, x1, y1, cor):
             d += incNE
         else:
             d += incE
-
+            
 def desenhar_circulo(superficie, x, y, raio, cor):
-
     for px in range(int(x - raio), int(x + raio + 1)):
         for py in range(int(y - raio), int(y + raio + 1)):
-
-            distancia = (px - x) ** 2 + (py - y) ** 2
-
-            if distancia <= raio ** 2:
-                superficie.set_at((px, py), cor)
+            if (px - x) ** 2 + (py - y) ** 2 <= raio ** 2:
+                setPixel(superficie, px, py, cor)
 
 def desenhar_poligono(superficie, pontos, cor_borda):
     n = len(pontos)
@@ -63,6 +71,72 @@ def interpola_cor(c1, c2, t):
     b = max(0, min(b, 255))
     
     return (r, g, b)
+
+def escala(sx, sy):
+    return [[sx, 0, 0], 
+            [0, sy, 0], 
+            [0,  0, 1]]
+
+def escalar_pixels(imagem, nova_larg, nova_alt):
+    larg, alt = imagem.get_size()
+    m = escala(larg / nova_larg, alt / nova_alt)  # inversa da escala: destino -> origem
+    pixels = []
+    for xd in range(nova_larg):
+        for yd in range(nova_alt):
+            xo = m[0][0] * xd + m[0][1] * yd + m[0][2]
+            yo = m[1][0] * xd + m[1][1] * yd + m[1][2]
+            cor = imagem.get_at((int(xo), int(yo)))
+            if cor.a > 128:
+                pixels.append((xd, yd, tuple(cor)))
+    return pixels
+
+def obter_pixels(self, larg, alt):
+            if (larg, alt) not in self.cache:
+                self.cache[(larg, alt)] = escalar_pixels(self.imagem, larg, alt)
+            return self.cache[(larg, alt)]
+
+def scanline_fill(superficie, pontos, cor_preenchimento):
+    # Encontra Y mínimo e máximo
+    ys = [p[1] for p in pontos]
+    y_min = int(min(ys))
+    y_max = int(max(ys))
+
+    n = len(pontos)
+
+    for y in range(y_min, y_max):
+        intersecoes_x = []
+
+        for i in range(n):
+            x0, y0 = pontos[i]
+            x1, y1 = pontos[(i + 1) % n]
+
+            # Ignora arestas horizontais
+            if y0 == y1:
+                continue
+
+            # Garante y0 < y1
+            if y0 > y1:
+                x0, y0, x1, y1 = x1, y1, x0, y0
+
+            # Regra Ymin ≤ y < Ymax
+            if y < y0 or y >= y1:
+                continue
+
+            # Calcula interseção
+            x = x0 + (y - y0) * (x1 - x0) / (y1 - y0)
+            intersecoes_x.append(x)
+
+        # Ordena interseções
+        intersecoes_x.sort()
+
+        # Preenche entre pares
+        for i in range(0, len(intersecoes_x), 2):
+            if i + 1 < len(intersecoes_x):
+                x_inicio = int(round(intersecoes_x[i]))
+                x_fim = int(round(intersecoes_x[i + 1]))
+
+                for x in range(x_inicio, x_fim + 1):
+                    setPixel(superficie, x, y, cor_preenchimento)
     
 def scanline_fill_gradiente(superficie, pontos, cores):
     ys = [p[1] for p in pontos]
@@ -111,3 +185,145 @@ def scanline_fill_gradiente(superficie, pontos, cores):
                     t = (x - x_ini) / (x_fim - x_ini)
                     cor = interpola_cor(cor_ini, cor_fim, t)
                     setPixel(superficie, x, y, cor)
+
+clip_atual = None
+
+def identidade():
+
+    return [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+    ]
+
+
+def translacao(tx, ty):
+
+    return [
+        [1, 0, tx],
+        [0, 1, ty],
+        [0, 0, 1]
+    ]
+
+
+def rotacao(theta):
+
+    c = math.cos(theta)
+    s = math.sin(theta)
+
+    return [
+        [c, -s, 0],
+        [s,  c, 0],
+        [0,  0, 1]
+    ]
+
+
+def multiplica_matrizes(a, b):
+
+    r = [
+        [0] * 3
+        for _ in range(3)
+    ]
+
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+
+                r[i][j] += (
+                    a[i][k]
+                    * b[k][j]
+                )
+
+    return r
+
+def aplica_transformacao(m, pontos):
+
+    novos = []
+
+    for x, y in pontos:
+
+        v = [x, y, 1]
+
+        x_novo = (
+            m[0][0] * v[0]
+            + m[0][1] * v[1]
+            + m[0][2]
+        )
+
+        y_novo = (
+            m[1][0] * v[0]
+            + m[1][1] * v[1]
+            + m[1][2]
+        )
+
+        novos.append(
+            (x_novo, y_novo)
+        )
+
+    return novos
+
+
+def janela_viewport(janela, viewport):
+
+    Wxmin, Wymin, Wxmax, Wymax = janela
+    Vxmin, Vymin, Vxmax, Vymax = viewport
+
+    sx = (
+        (Vxmax - Vxmin)
+        / (Wxmax - Wxmin)
+    )
+
+    sy = (
+        (Vymax - Vymin)
+        / (Wymax - Wymin)
+    )
+
+    # ------------------------------------------------
+    # 1. Janela -> origem
+    # -------------------------------------------------
+
+    M = identidade()
+
+    M = multiplica_matrizes(
+        translacao(
+            -Wxmin,
+            -Wymin
+        ),
+        M
+    )
+
+    # -------------------------------------------------
+    # 2. Escala
+    # -------------------------------------------------
+
+    M = multiplica_matrizes(
+        escala(
+            sx,
+            sy
+        ),
+        M
+    )
+
+    # -------------------------------------------------
+    # 3. Origem -> viewport
+    # -------------------------------------------------
+
+    M = multiplica_matrizes(
+        translacao(
+            Vxmin,
+            Vymin
+        ),
+        M
+    )
+
+    return M
+
+def desenhar_viewport(superficie, viewport, cor_borda, conteudo=None):
+    global clip_atual
+    Vxmin, Vymin, Vxmax, Vymax = viewport
+    clip_atual = viewport
+    preencher_regiao(superficie, Vxmin, Vymin, Vxmax, Vymax, AZUL_AGUA)
+    if conteudo:
+        conteudo()
+    clip_atual = None
+    desenhar_poligono(superficie, [(Vxmin, Vymin), (Vxmax, Vymin), (Vxmax, Vymax), (Vxmin, Vymax)], cor_borda)

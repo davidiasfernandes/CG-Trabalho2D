@@ -1,6 +1,7 @@
 import random
 
 from Cores import VERDE_MUSGO, VERDE_ESCURO
+from Requires.Functions import setPixel
 
 SPEED = 3.5
 RAIO = 40
@@ -39,10 +40,10 @@ class Plataforma:
                 distancia = (x - self.x) ** 2 + (y - tela_y) ** 2
 
                 if distancia < r2 - Plataforma.borda:
-                    tela.set_at((x, y), Plataforma.cor)
+                    setPixel(tela, x, y, Plataforma.cor)
 
                 elif distancia <= r2:
-                    tela.set_at((x, y), Plataforma.cor2)
+                    setPixel(tela, x, y, Plataforma.cor2)
 
     def change_direction(self, largura):
 

@@ -1,28 +1,11 @@
 import math
 
+from Requires.Functions import setPixel
 import pygame
 from Plataforma import RAIO
+import Requires.Functions as Functions
 
 ESCALA_MAX = 1.4
-
-def escala(sx, sy):
-    return [[sx, 0, 0], 
-            [0, sy, 0], 
-            [0,  0, 1]]
-
-def escalar_pixels(imagem, nova_larg, nova_alt):
-    larg, alt = imagem.get_size()
-    m = escala(larg / nova_larg, alt / nova_alt)  # inversa da escala: destino -> origem
-    pixels = []
-    for xd in range(nova_larg):
-        for yd in range(nova_alt):
-            xo = m[0][0] * xd + m[0][1] * yd + m[0][2]
-            yo = m[1][0] * xd + m[1][1] * yd + m[1][2]
-            cor = imagem.get_at((int(xo), int(yo)))
-            if cor.a > 128:
-                pixels.append((xd, yd, tuple(cor)))
-    return pixels
-
 
 class Sapo:
 
@@ -41,7 +24,7 @@ class Sapo:
 
     def obter_pixels(self, larg, alt):
         if (larg, alt) not in self.cache:
-            self.cache[(larg, alt)] = escalar_pixels(self.imagem, larg, alt)
+            self.cache[(larg, alt)] = Functions.escalar_pixels(self.imagem, larg, alt)
         return self.cache[(larg, alt)]
     
     def desenhar_sap(self, tela, camera_y=0):
@@ -54,7 +37,7 @@ class Sapo:
             pos_x = tela_x + x
             pos_y = tela_y + y
             if 0 <= pos_x < tela.get_width() and 0 <= pos_y < tela.get_height():
-                tela.set_at((pos_x, pos_y), cor)
+                setPixel(tela, pos_x, pos_y, cor)
 
     def get_centro(self):
         return self.x + self.largura // 2, self.y + self.altura // 2
