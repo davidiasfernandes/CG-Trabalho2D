@@ -58,6 +58,7 @@ jump_count = 0
 carga_dir = 1  # 1 = carga subindo, -1 = descendo
 afundando = False
 fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
+fonte_ajuda2 = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 16)
 
 def atualizar_camera():
 
@@ -233,6 +234,8 @@ while rodando:
         tela.blit(ajuda_titulo, ((LARGURA - ajuda_titulo.get_width()) // 2, ALTURA // 8))
         ajuda = fonte_ajuda.render("Pressione e segure 'ESPAÇO' para carregar o pulo. \n\nCuidado! É mais perigoso do que parece... \n\nA barra branca indica a força de seu pulo, estude para aumentar sua chance de pousar na vitória régia da frente! \n\n", True, (255, 255, 255))
         tela.blit(ajuda, ((LARGURA - ajuda.get_width()) // 2, ALTURA // 4))
+        ajuda2 = fonte_ajuda2.render("\nClique \"Esc\" para voltar ao menu.", True, (0, 100, 255))
+        tela.blit(ajuda2, ((LARGURA - ajuda2.get_width()) // 2, ALTURA // 4 + 300))
     elif status == 4:
         rodando = False
 
