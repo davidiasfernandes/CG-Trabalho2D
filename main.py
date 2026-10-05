@@ -6,6 +6,7 @@ from Plataforma import RAIO, Plataforma, SPEED
 from Margem import LARGURA_MARGEM, Margem
 from Sapo import Sapo
 from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
+from fimdejogo import desenhar_tela_final
 
 def calculate_plats(initial_lenght, initial_height, quantidade, space_between):
 
@@ -37,6 +38,7 @@ tela = pygame.display.set_mode((LARGURA, ALTURA))
 clock = pygame.time.Clock()
 fonte = pygame.font.SysFont("Gagalin", 18)
 
+global status
 status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
 plats = calculate_plats(INITIAL_X, INITIAL_Y, 10, 275)
 
@@ -132,9 +134,8 @@ def resetar_sapo():
     camera_alvo = 0
 
 def jogo(eventos):
-    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual, pontos
+    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual, pontos, status
 
-    
     for evento in eventos:
         if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
             if not player.pulando and not afundando:
@@ -202,6 +203,8 @@ def jogo(eventos):
 
     atualizar_camera()
 
+    status = 5 if pontos == len(plats) - 1 else 2
+
     tela.fill(AZUL_AGUA)
 
     ##### Renderização: plataformas, margens, sapo e carregamento do pulo (barra vertical com gradiente de vermelho para verde)
@@ -247,7 +250,7 @@ while rodando:
         desenhar_menu()
     elif status == 2:
         jogo(eventos)
-    elif status == 3:
+    elif status == 5:
         tela.fill((0, 0, 0))
         ajuda_titulo = fonte_ajuda.render("Ajuda: \n\n\n", True, (0, 255, 0))
         tela.blit(ajuda_titulo, ((LARGURA - ajuda_titulo.get_width()) // 2, ALTURA // 8))
@@ -257,6 +260,8 @@ while rodando:
         tela.blit(ajuda2, ((LARGURA - ajuda2.get_width()) // 2, ALTURA // 4 + 300))
     elif status == 4:
         rodando = False
+    elif status == 3:
+        desenhar_tela_final()
 
     pygame.display.flip()
     clock.tick(60)

@@ -72,6 +72,12 @@ def interpola_cor(c1, c2, t):
     
     return (r, g, b)
 
+def desenhar_elipse(superficie, x, y, rx, ry, cor):
+    for px in range(int(x - rx), int(x + rx + 1)):
+        for py in range(int(y - ry), int(y + ry + 1)):
+            if ((px - x) / rx) ** 2 + ((py - y) / ry) ** 2 <= 1:
+                setPixel(superficie, px, py, cor)
+
 def escala(sx, sy):
     return [[sx, 0, 0], 
             [0, sy, 0], 
@@ -137,6 +143,27 @@ def scanline_fill(superficie, pontos, cor_preenchimento):
 
                 for x in range(x_inicio, x_fim + 1):
                     setPixel(superficie, x, y, cor_preenchimento)
+
+def dda(superficie, x0, y0, x1, y1, cor):
+    dx = x1 - x0
+    dy = y1 - y0
+
+    passos = max(abs(dx), abs(dy))
+
+    if passos == 0:
+        setPixel(superficie, x0, y0, cor)
+        return
+
+    x_inc = dx / passos
+    y_inc = dy / passos
+
+    x = x0
+    y = y0
+
+    for _ in range(passos + 1):
+        setPixel(superficie, round(x), round(y), cor)
+        x += x_inc
+        y += y_inc
     
 def scanline_fill_gradiente(superficie, pontos, cores):
     ys = [p[1] for p in pontos]
@@ -186,6 +213,30 @@ def scanline_fill_gradiente(superficie, pontos, cores):
                     cor = interpola_cor(cor_ini, cor_fim, t)
                     setPixel(superficie, x, y, cor)
 
+def flood_fill_iterativo(superficie, x, y, cor_preenchimento, cor_borda):
+    largura = superficie.get_width()
+    altura = superficie.get_height()
+
+    pilha = [(x, y)]
+
+    while pilha:
+        x, y = pilha.pop()
+
+        if not (0 <= x < largura and 0 <= y < altura):
+            continue
+
+        cor_atual = superficie.get_at((x, y))[:3]
+
+        if cor_atual == cor_borda or cor_atual == cor_preenchimento:
+            continue
+
+        setPixel(superficie, x, y, cor_preenchimento)
+
+        pilha.append((x + 1, y))
+        pilha.append((x - 1, y))
+        pilha.append((x, y + 1))
+        pilha.append((x, y - 1))
+
 clip_atual = None
 
 def identidade():
@@ -217,25 +268,6 @@ def rotacao(theta):
         [0,  0, 1]
     ]
 
-
-def multiplica_matrizes(a, b):
-
-    r = [
-        [0] * 3
-        for _ in range(3)
-    ]
-
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-
-                r[i][j] += (
-                    a[i][k]
-                    * b[k][j]
-                )
-
-    return r
-
 def aplica_transformacao(m, pontos):
 
     novos = []
@@ -261,6 +293,25 @@ def aplica_transformacao(m, pontos):
         )
 
     return novos
+
+def multiplica_matrizes(a, b):
+
+    r = [
+        [0] * 3
+        for _ in range(3)
+    ]
+
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+
+                r[i][j] += (
+                    a[i][k]
+                    * b[k][j]
+                )
+
+    return r
+
 
 
 def janela_viewport(janela, viewport):

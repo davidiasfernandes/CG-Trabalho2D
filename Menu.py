@@ -1,7 +1,6 @@
 import pygame
-import sys
 
-from Requires.Functions import desenhar_poligono
+from Requires.Functions import desenhar_poligono, flood_fill_iterativo
 from Cores import VERDE_MUSGO, VERDE_ESCURO
 
 pygame.init()
@@ -12,9 +11,6 @@ screen = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Menu do Jogo")
 
 clock = pygame.time.Clock()
-
-# 2. Carregamento da imagem de fundo
-screen.fill((0, 0, 0)) 
 
 # 3. Fontes e Cores
 # Usamos SysFont com pixel art/arcade estilo padrão, ou None para a fonte padrão
