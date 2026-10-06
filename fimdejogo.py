@@ -6,12 +6,13 @@ pygame.init()
 LARGURA, ALTURA = 1500, 750
 tela_final = pygame.display.set_mode((LARGURA, ALTURA))
 
+fonte_titulo = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 67)
+fonte_texto = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 36)
+
 def desenhar_tela_final():
+
     tela_final.fill((0, 125, 255))
 
-
-    fonte_titulo = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 67)
-    fonte_texto = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 36)
     superficie_titulo = fonte_titulo.render("Fim de Jogo", True, (255, 255, 255))
     superficie_texto = fonte_texto.render("Clique \"Esc\" para voltar ao menu.", True, (255, 255, 255))
 

@@ -22,6 +22,9 @@ class Sapo:
         self.destino_y = y
         self.plataforma_atual = None
 
+        for i in range(9):
+            self.obter_pixels(*(round(90 * (1 + 0.05 * i)),) * 2)
+
     def obter_pixels(self, larg, alt):
         if (larg, alt) not in self.cache:
             self.cache[(larg, alt)] = Functions.escalar_pixels(self.imagem, larg, alt)
@@ -30,6 +33,7 @@ class Sapo:
     def desenhar_sap(self, tela, camera_y=0):
         larg = round(self.largura * self.fator)
         alt = round(self.altura * self.fator)
+        tela.lock()
         # Cresce a partir do centro, então desloca metade do que aumentou
         tela_x = int(self.x) - (larg - self.largura) // 2
         tela_y = int(self.y - camera_y) - (alt - self.altura) // 2
@@ -38,6 +42,7 @@ class Sapo:
             pos_y = tela_y + y
             if 0 <= pos_x < tela.get_width() and 0 <= pos_y < tela.get_height():
                 setPixel(tela, pos_x, pos_y, cor)
+        tela.unlock()
 
     def get_centro(self):
         return self.x + self.largura // 2, self.y + self.altura // 2
@@ -80,6 +85,6 @@ class Sapo:
         total = self.y_inicial - self.destino_y
         if self.pulando and total > 0:
             progresso = (self.y_inicial - self.y) / total
-            self.fator = 1 + (ESCALA_MAX - 1) * math.sin(math.pi * progresso)
+            self.fator = round((1 + (ESCALA_MAX - 1) * math.sin(math.pi * progresso)) * 20) / 20
         else:
             self.fator = 1.0

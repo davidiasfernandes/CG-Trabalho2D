@@ -28,7 +28,7 @@ VELOCIDADE_CAMERA_RETORNO = 25
 
 INITIAL_X, INITIAL_Y = 750, 650
 MAX_JUMP = 30
-TEMPO_CARGA = 1  # segundos segurando para ir de zero até a força máxima
+TEMPO_CARGA = 0.85  # segundos segurando para ir de zero até a força máxima
 PASSO_CARGA = MAX_JUMP / (TEMPO_CARGA * 60)  # quanto a carga muda por frame (60 FPS)
 FORCA_MULT = 14
 ALTURA_CARREGAMENTO = 100
@@ -40,7 +40,7 @@ fonte = pygame.font.SysFont("Gagalin", 18)
 
 global status
 status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
-plats = calculate_plats(INITIAL_X, INITIAL_Y, 10, 275)
+plats = calculate_plats(INITIAL_X, INITIAL_Y, 7, 275)
 
 janela = (0, min(p.y for p in plats) - RAIO, LARGURA, ALTURA)
 MINI_L = 120
@@ -103,7 +103,6 @@ def verificar_camera(plat):
 
     # A cada plataforma ímpar:
     # P3 -> revela P4 e P5
-    # P5 -> revela P6 e P7
 
     if indice >= 2 and indice % 2 == 0:
 
@@ -243,14 +242,14 @@ while rodando:
             rodando = False
         elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1 and status == 1:
             status = verificar_click(pygame.mouse.get_pos(), status)
-        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE and status in (2, 3):
+        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE and status in (2, 3, 5):
             status = 1
 
     if status == 1:
         desenhar_menu()
     elif status == 2:
         jogo(eventos)
-    elif status == 5:
+    elif status == 3:
         tela.fill((0, 0, 0))
         ajuda_titulo = fonte_ajuda.render("Ajuda: \n\n\n", True, (0, 255, 0))
         tela.blit(ajuda_titulo, ((LARGURA - ajuda_titulo.get_width()) // 2, ALTURA // 8))
@@ -260,7 +259,7 @@ while rodando:
         tela.blit(ajuda2, ((LARGURA - ajuda2.get_width()) // 2, ALTURA // 4 + 300))
     elif status == 4:
         rodando = False
-    elif status == 3:
+    elif status == 5:
         desenhar_tela_final()
 
     pygame.display.flip()

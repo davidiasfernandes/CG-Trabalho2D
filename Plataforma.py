@@ -16,35 +16,41 @@ class Plataforma:
     borda = 100
 
     def __init__(self, x, y):
+        Plataforma.criar_pixels()
         self.x = x
         self.y = y
         self.speed = SPEED
         self.direction = random.randint(0, 1)  # 1 = esquerda, 0 = direita
 
-    def desenhar_plat(self, tela, camera_y=0):
+    pixels = []
 
-        # A posição física continua sendo self.y.
-        # camera_y altera somente onde a plataforma aparece na tela.
-        tela_y = self.y - camera_y
+    @classmethod
+    def criar_pixels(cls):
+        if cls.pixels:
+            return
 
-        r2 = Plataforma.raio ** 2
+        r2 = cls.raio ** 2
 
-        for x in range(
-            int(self.x - Plataforma.raio),
-            int(self.x + Plataforma.raio + 1)
-        ):
-            for y in range(
-                int(tela_y - Plataforma.raio),
-                int(tela_y + Plataforma.raio + 1)
-            ):
+        for px in range(-cls.raio, cls.raio + 1):
+            for py in range(-cls.raio, cls.raio + 1):
 
-                distancia = (x - self.x) ** 2 + (y - tela_y) ** 2
+                distancia = px ** 2 + py ** 2
 
-                if distancia < r2 - Plataforma.borda:
-                    setPixel(tela, x, y, Plataforma.cor)
+                if distancia < r2 - cls.borda:
+                    cls.pixels.append((px, py, cls.cor))
 
                 elif distancia <= r2:
-                    setPixel(tela, x, y, Plataforma.cor2)
+                    cls.pixels.append((px, py, cls.cor2))
+
+    def desenhar_plat(self, tela, camera_y=0):
+        tela_y = self.y - camera_y
+        tela.lock()
+        # Desenha os pixels já calculados.
+        for dx, dy, cor in Plataforma.pixels:
+            x = int(self.x + dx)
+            y = int(tela_y + dy)
+            setPixel(tela, x, y, cor)
+        tela.unlock()
 
     def change_direction(self, largura):
 
