@@ -294,6 +294,11 @@ def aplica_transformacao(m, pontos):
 
     return novos
 
+def transladar_ponto(x, y, dx, dy):
+    T = translacao(dx, dy)
+    (novo_x, novo_y), = aplica_transformacao(T, [(x, y)])
+    return novo_x, novo_y
+
 def multiplica_matrizes(a, b):
 
     r = [
