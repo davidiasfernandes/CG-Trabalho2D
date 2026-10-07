@@ -8,6 +8,10 @@ from Sapo import Sapo
 from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
 from fimdejogo import desenhar_tela_final
 
+pygame.mixer.music.load("./Assets/trilha.mp3")
+pygame.mixer.music.set_volume(0.65)
+pygame.mixer.music.play(-1)
+
 def calculate_plats(initial_lenght, initial_height, quantidade, space_between):
 
     return [
@@ -72,7 +76,7 @@ plataforma_atual = plats[0]
 pontos = 0
 carregando_pulo = False
 jump_count = 0
-carga_dir = 1  # 1 = carga subindo, -1 = descendo
+carga_dir = 1  # 1 = subindo, -1 = descendo
 afundando = False
 fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
 fonte_ajuda2 = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 16)
@@ -148,9 +152,12 @@ def jogo(eventos):
                 player.pular(jump_count * FORCA_MULT)
                 jump_count = 0
 
-
     if pygame.key.get_pressed()[pygame.K_0]:
         resetar_sapo()
+
+    pygame.mixer.music.load("./Assets/jogo_music.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
 
     # A carga sobe até o máximo e desce até zero, repetindo enquanto o espaço estiver pressionado
     if carregando_pulo:
@@ -243,8 +250,10 @@ while rodando:
             status = 1
 
     if status == 1:
+        pygame.mixer.music.unpause()
         desenhar_menu()
     elif status == 2:
+        pygame.mixer.music.pause()
         jogo(eventos)
     elif status == 3:
         tela.fill((0, 0, 0))
@@ -257,7 +266,17 @@ while rodando:
     elif status == 4:
         rodando = False
     elif status == 5:
+        resetar_sapo()
+        pontos = 0
         desenhar_tela_final()
+    elif status == 6:
+        tela.fill((0, 0, 0))
+        lore_titulo = fonte_ajuda.render("Lore: \n\n\n", True, (255, 0, 0))
+        tela.blit(lore_titulo, ((LARGURA - lore_titulo.get_width()) // 2, ALTURA // 8))
+        lore = fonte_ajuda.render("Webert Jonh é um sapo que vive em um pântano cheio de perigos. \n\nEle precisa pular de vitória-régia em vitória-régia para atravessar o pântano e chegar ao outro lado. \n\nMas cuidado! Nem todas as vitórias-régias são seguras, algumas podem afundar ou estar muito distantes. \n\nUse sua habilidade e estratégia para ajudar Webert a atravessar o pântano com segurança!\n\n", True, (255, 255, 255))
+        tela.blit(lore, ((LARGURA - lore.get_width()) // 2, ALTURA // 4))
+        lore2 = fonte_ajuda2.render("\nClique \"Esc\" para voltar ao menu.", True, (0, 100, 255))
+        tela.blit(lore2, ((LARGURA - lore2.get_width()) // 2, ALTURA // 4 + 300))
 
     pygame.display.flip()
     clock.tick(60)

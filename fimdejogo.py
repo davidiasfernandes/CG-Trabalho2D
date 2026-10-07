@@ -1,17 +1,31 @@
 import pygame
-from Requires.Functions import dda, desenhar_poligono, desenhar_elipse, flood_fill_iterativo
+from Requires.Functions import dda, desenhar_poligono, desenhar_elipse, escalar_pixels, flood_fill_iterativo, setPixel
 
 pygame.init()
 
 LARGURA, ALTURA = 1500, 750
 tela_final = pygame.display.set_mode((LARGURA, ALTURA))
+imagem_fundo = pygame.image.load("./Assets/fundo.png")
 
 fonte_titulo = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 67)
 fonte_texto = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 36)
 
+
+def criar_fundo_pixels():
+    superficie = pygame.Surface((LARGURA, ALTURA))
+    superficie.lock()
+    for x, y, cor in escalar_pixels(imagem_fundo, LARGURA, ALTURA):
+        if 0 <= x < LARGURA and 0 <= y < ALTURA:
+            setPixel(superficie, x, y, cor)
+    superficie.unlock()
+    return superficie
+
+fundo_pixels = criar_fundo_pixels()
+
 def desenhar_tela_final():
 
     tela_final.fill((0, 125, 255))
+    tela_final.blit(fundo_pixels, (0, 0))
 
     superficie_titulo = fonte_titulo.render("Fim de Jogo", True, (255, 255, 255))
     superficie_texto = fonte_texto.render("Clique \"Esc\" para voltar ao menu.", True, (255, 255, 255))

@@ -9,18 +9,47 @@ ESCALA_MAX = 1.4
 
 class Sapo:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, caminho="./Assets/sapo.png", tamanho=90):
         self.x = x
         self.y = y
-        self.largura = 90
-        self.altura = 90
-        self.imagem = pygame.image.load("./Assets/sapo.png")
+        self.largura = tamanho
+        self.altura = tamanho
+        self.imagem = pygame.image.load(caminho)
         self.cache = {}  # (largura, altura) -> lista de pixels
         self.fator = 1.0
         self.y_inicial = y
         self.pulando = False
         self.destino_y = y
         self.plataforma_atual = None
+        self.cache_rot = {}
+
+    def obter_rotacionado(self, theta):
+        ang = round(math.degrees(theta) / 5) * 5
+        if ang in self.cache_rot: return self.cache_rot[ang]
+        lado = round(math.hypot(self.largura, self.altura))
+        base = {(x, y): cor for x, y, cor in self.obter_pixels(self.largura, self.altura)}
+        destino = [(x, y) for y in range(lado) for x in range(lado)]
+        centrados = [(x - lado / 2, y - lado / 2) for x, y in destino]
+        # rotação inversa: de cada pixel de destino volta ao pixel de origem
+        origens = Functions.aplica_transformacao(Functions.rotacao(-math.radians(ang)), centrados)
+        resultado = []
+        for (x, y), (ox, oy) in zip(destino, origens):
+            cor = base.get((round(ox + self.largura / 2), round(oy + self.altura / 2)))
+            if cor is not None: resultado.append((x, y, cor))
+        self.cache_rot[ang] = resultado
+        return resultado
+
+    def desenhar_rotacionado(self, tela, mouse_x, mouse_y):
+        cx, cy = self.get_centro()
+        theta = math.atan2(mouse_y - cy, mouse_x - cx)
+        lado = round(math.hypot(self.largura, self.altura))
+        tela_x, tela_y = cx - lado // 2, cy - lado // 3
+        tela.lock()
+        for x, y, cor in self.obter_rotacionado(theta):
+            pos_x, pos_y = tela_x + x, tela_y + y
+            if 0 <= pos_x < tela.get_width() and 0 <= pos_y < tela.get_height():
+                setPixel(tela, pos_x, pos_y, cor)
+        tela.unlock()
 
         for i in range(9):
             self.obter_pixels(*(round(90 * (1 + 0.05 * i)),) * 2)

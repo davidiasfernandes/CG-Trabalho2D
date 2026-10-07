@@ -1,6 +1,8 @@
 import pygame
+from Requires import Functions
+from Sapo import Sapo
 
-from Requires.Functions import desenhar_poligono, flood_fill_iterativo
+from Requires.Functions import desenhar_poligono
 from Cores import VERDE_MUSGO, VERDE_ESCURO
 
 pygame.init()
@@ -16,6 +18,7 @@ clock = pygame.time.Clock()
 # Usamos SysFont com pixel art/arcade estilo padrão, ou None para a fonte padrão
 fonte_titulo = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 67)
 fonte_botao = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 36)
+sapo_menu = Sapo(LARGURA // 2 - 450, 400, "./Assets/sapo_menu.png", 200)
 
 COR_TEXTO = (255, 255, 255)
 
@@ -27,6 +30,7 @@ X_CENTRO = (LARGURA - LARGURA_BOTAO) // 2
 btn_jogar = [(LARGURA/2 -LARGURA_BOTAO / 2, 350), (LARGURA/2 -LARGURA_BOTAO / 2, 350 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 350 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 350)]
 btn_ajuda = [(LARGURA/2 -LARGURA_BOTAO / 2, 450), (LARGURA/2 -LARGURA_BOTAO / 2, 450 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 450 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 450)]
 btn_sair = [(LARGURA/2 -LARGURA_BOTAO / 2, 550), (LARGURA/2 -LARGURA_BOTAO / 2, 550 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 550 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 550)]
+btn_lore = [(LARGURA/2 -LARGURA_BOTAO / 2, 650), (LARGURA/2 -LARGURA_BOTAO / 2, 650 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 650 + ALTURA_BOTAO), (LARGURA/2 + LARGURA_BOTAO / 2, 650)]
 
 # Função auxiliar para desenhar botões com texto centralizado
 def desenhar_botao(pontos, texto, pos_mouse):
@@ -58,15 +62,17 @@ def verificar_click(pos_mouse, status):
         return 3
     elif btn_sair[0][0] <= x <= btn_sair[2][0] and btn_sair[0][1] <= y <= btn_sair[2][1]:
         return 4
+    elif btn_lore[0][0] <= x <= btn_lore[2][0] and btn_lore[0][1] <= y <= btn_lore[2][1]:
+        return 6
     return status
 
 def desenhar_menu(): 
     
     # Preenche o fundo do menu com uma cor sólida
-    screen.fill((0, 0, 0))  # Preto
+    screen.fill((50, 50, 50))  # Cinza
 
     # Renderiza o título do menu
-    titulo = fonte_titulo.render("Webert Jonh", True, COR_TEXTO)
+    titulo = fonte_titulo.render("Pula Webert!", True, COR_TEXTO)
     screen.blit(titulo, ((LARGURA - titulo.get_width()) // 2, 150))
 
     # Obtém a posição atual do mouse
@@ -76,3 +82,6 @@ def desenhar_menu():
     desenhar_botao(btn_jogar, "Jogar", pos_mouse)
     desenhar_botao(btn_ajuda, "Ajuda", pos_mouse)
     desenhar_botao(btn_sair, "Sair", pos_mouse)
+    desenhar_botao(btn_lore, "Lore", pos_mouse)
+
+    sapo_menu.desenhar_rotacionado(screen, *pos_mouse)
