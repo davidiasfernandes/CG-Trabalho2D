@@ -48,10 +48,8 @@ class Sapo:
         return self.x + self.largura // 2, self.y + self.altura // 2
 
     def move_alongside(self, plat):
-        if plat.direction == 1:
-            self.x -= plat.speed
-        else:
-            self.x += plat.speed
+        dx = -plat.speed if plat.direction == 1 else plat.speed
+        self.x, self.y = Functions.transladar_ponto(self.x, self.y, dx, 0)
 
     def check_underneath(self, plats):
         centro_x, centro_y = self.get_centro()
@@ -77,11 +75,15 @@ class Sapo:
     def atualizar_pulo(self):
         if not self.pulando:
             return
-        if self.y > self.destino_y:
-            self.y -= 8
+        
+        if self.y - 8 > self.destino_y:
+            dy = -8
         else:
-            self.y = self.destino_y
+            dy = self.destino_y - self.y
             self.pulando = False
+
+        self.x, self.y = Functions.transladar_ponto(self.x, self.y, 0, dy)
+
         total = self.y_inicial - self.destino_y
         if self.pulando and total > 0:
             progresso = (self.y_inicial - self.y) / total

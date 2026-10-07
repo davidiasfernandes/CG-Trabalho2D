@@ -2,7 +2,7 @@ import random
 
 from Cores import VERDE_MUSGO, VERDE_ESCURO
 from Margem import Margem, LARGURA_MARGEM
-from Requires.Functions import setPixel
+from Requires.Functions import setPixel, transladar_ponto
 
 SPEED = 3.5
 RAIO = 40
@@ -65,7 +65,5 @@ class Plataforma:
 
         self.change_direction(1500)
 
-        if self.direction == 1:
-            self.x -= self.speed
-        else:
-            self.x += self.speed
+        dx = -self.speed if self.direction == 1 else self.speed
+        self.x, self.y = transladar_ponto(self.x, self.y, dx, 0)

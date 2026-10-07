@@ -1,7 +1,7 @@
 import pygame
 from Menu import desenhar_menu, verificar_click
 from Requires.Functions import aplica_transformacao, desenhar_circulo, desenhar_poligono, janela_viewport, preencher_regiao
-from Requires.Functions import scanline_fill_gradiente, desenhar_viewport
+from Requires.Functions import scanline_fill_gradiente, desenhar_viewport, transladar_ponto
 from Plataforma import RAIO, Plataforma, SPEED
 from Margem import LARGURA_MARGEM, Margem
 from Sapo import Sapo
@@ -78,22 +78,19 @@ fonte_ajuda = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 24)
 fonte_ajuda2 = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 16)
 
 def atualizar_camera():
-
     global camera_y
 
     if camera_y < camera_alvo:
-
-        camera_y += VELOCIDADE_CAMERA
-
-        if camera_y > camera_alvo:
-            camera_y = camera_alvo
+        dy = VELOCIDADE_CAMERA
+        if camera_y + dy > camera_alvo:
+            dy = camera_alvo - camera_y
+        _, camera_y = transladar_ponto(0, camera_y, 0, dy)
 
     elif camera_y > camera_alvo:
-
-        camera_y -= VELOCIDADE_CAMERA_RETORNO
-
-        if camera_y < camera_alvo:
-            camera_y = camera_alvo
+        dy = -VELOCIDADE_CAMERA_RETORNO
+        if camera_y + dy < camera_alvo:
+            dy = camera_alvo - camera_y
+        _, camera_y = transladar_ponto(0, camera_y, 0, dy)
 
 def verificar_camera(plat):
 
