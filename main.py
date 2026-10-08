@@ -154,11 +154,7 @@ def jogo(eventos):
 
     if pygame.key.get_pressed()[pygame.K_0]:
         resetar_sapo()
-
-    pygame.mixer.music.load("./Assets/jogo_music.mp3")
-    pygame.mixer.music.set_volume(0.5)
-    pygame.mixer.music.play(-1)
-
+        
     # A carga sobe até o máximo e desce até zero, repetindo enquanto o espaço estiver pressionado
     if carregando_pulo:
         jump_count += PASSO_CARGA * carga_dir
@@ -206,7 +202,7 @@ def jogo(eventos):
 
     atualizar_camera()
 
-    status = 5 if pontos == len(plats) - 1 else 2
+    status = 5 if pontos == len(plats) - 6 else 2
 
     tela.fill(AZUL_AGUA)
 
@@ -246,14 +242,12 @@ while rodando:
             rodando = False
         elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1 and status == 1:
             status = verificar_click(pygame.mouse.get_pos(), status)
-        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE and status in (2, 3, 5):
+        elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE and status in (2, 3, 5, 6):
             status = 1
 
     if status == 1:
-        pygame.mixer.music.unpause()
         desenhar_menu()
     elif status == 2:
-        pygame.mixer.music.pause()
         jogo(eventos)
     elif status == 3:
         tela.fill((0, 0, 0))
