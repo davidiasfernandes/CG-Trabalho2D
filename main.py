@@ -1,11 +1,12 @@
 import pygame
 from Menu import desenhar_menu, verificar_click
+from Requires import Functions
 from Requires.Functions import aplica_transformacao, desenhar_circulo, desenhar_poligono, janela_viewport, preencher_regiao
 from Requires.Functions import scanline_fill_gradiente, desenhar_viewport, transladar_ponto
 from Plataforma import RAIO, Plataforma, SPEED
-from Margem import LARGURA_MARGEM, Margem
+from Margem import LARGURA_MARGEM, Margem, MargemFinal, ALTURA_FINAL
 from Sapo import Sapo
-from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO
+from Cores import AZUL_AGUA, BRANCO, VERDE_ESCURO, MARGEM
 from fimdejogo import desenhar_tela_final
 
 pygame.mixer.music.load("./Assets/trilha.mp3")
@@ -44,9 +45,14 @@ fonte = pygame.font.SysFont("Gagalin", 18)
 
 global status
 status = 1  # 1 = menu, 2 = jogo, 3 = ajuda, 4 = sair
-plats = calculate_plats(INITIAL_X, INITIAL_Y, 7, 275)
+plats = calculate_plats(INITIAL_X, INITIAL_Y, 6, 275)
 
-janela = (0, min(p.y for p in plats) - RAIO, LARGURA, ALTURA)
+# Margem final: fica onde antes ficava a última plataforma
+y_centro_final = INITIAL_Y - 6 * 275
+margem_final = MargemFinal(0, y_centro_final - ALTURA_FINAL // 2)
+margem_final.draw()
+
+janela = (0, margem_final.y, LARGURA, ALTURA)
 MINI_L = 120
 MINI_A = round(MINI_L * (janela[3] - janela[1]) / (janela[2] - janela[0]))
 viewport = (10, 50, 10 + MINI_L, 50 + MINI_A)
@@ -61,6 +67,8 @@ def conteudo_mini():
     desenhar_circulo(tela, sx, sy, 3, BRANCO)
     cam = [(0, camera_y), (LARGURA, camera_y), (LARGURA, camera_y + ALTURA), (0, camera_y + ALTURA)]
     desenhar_poligono(tela, aplica_transformacao(M_MINI, cam), BRANCO)
+    desenhar_poligono(tela, aplica_transformacao(M_MINI, [(0, margem_final.y), (LARGURA, margem_final.y), (LARGURA, margem_final.y + ALTURA_FINAL), (0, margem_final.y + ALTURA_FINAL)]), MARGEM)
+    Functions.scanline_fill(tela, aplica_transformacao(M_MINI, [(0, margem_final.y), (LARGURA, margem_final.y), (LARGURA, margem_final.y + ALTURA_FINAL), (0, margem_final.y + ALTURA_FINAL)]), MARGEM)
 
 plats[0].speed = 0
 
@@ -74,6 +82,7 @@ player.pousar(plats[0])
 plataforma_atual = plats[0]
 
 pontos = 0
+chegou = False
 carregando_pulo = False
 jump_count = 0
 carga_dir = 1  # 1 = subindo, -1 = descendo
@@ -104,14 +113,14 @@ def verificar_camera(plat):
 
     # A cada plataforma ímpar:
     # P3 -> revela P4 e P5
+    # P5 -> revela P6 e a margem final
 
     if indice >= 2 and indice % 2 == 0:
 
-        proxima_ultima = min(indice + 2, len(plats) - 1)
-
-        # Queremos que a nova última plataforma
-        # fique na mesma região superior da tela.
-        camera_alvo = plats[proxima_ultima].y - 100
+        if indice + 2 >= len(plats):
+            camera_alvo = margem_final.y
+        else:
+            camera_alvo = plats[indice + 2].y - 100
 
 def resetar_sapo():
 
@@ -121,6 +130,7 @@ def resetar_sapo():
     global afundando
     global camera_alvo
     global pontos
+    global chegou
 
     player.pousar(plats[0])
 
@@ -131,10 +141,11 @@ def resetar_sapo():
 
     afundando = False
     pontos = 0
+    chegou = False
     camera_alvo = 0
 
 def jogo(eventos):
-    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual, pontos, status
+    global carregando_pulo, jump_count, carga_dir, afundando, plataforma_atual, pontos, status, chegou
 
     for evento in eventos:
         if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
@@ -154,7 +165,7 @@ def jogo(eventos):
 
     if pygame.key.get_pressed()[pygame.K_0]:
         resetar_sapo()
-        
+
     # A carga sobe até o máximo e desce até zero, repetindo enquanto o espaço estiver pressionado
     if carregando_pulo:
         jump_count += PASSO_CARGA * carga_dir
@@ -178,18 +189,21 @@ def jogo(eventos):
 
     if player.pulando:
         player.atualizar_pulo()
-        # Quando o pulo termina, pousa se houver plataforma embaixo, senão afunda
+        # Quando o pulo termina, chega na margem final, pousa se houver plataforma embaixo, senão afunda
         if not player.pulando:
-            # Pousa se o centro do sapo estiver dentro do círculo de alguma plataforma
-            plat = player.check_underneath(plats)
-            if plat is not None:
-                player.pousar(plat)
-                plataforma_atual = plat
-                verificar_camera(plat)
-                pontos = max(pontos, plats.index(plat))
+            if player.get_centro()[1] <= margem_final.y + ALTURA_FINAL:
+                chegou = True
             else:
-                player.plataforma_atual = None
-                afundando = True
+                # Pousa se o centro do sapo estiver dentro do círculo de alguma plataforma
+                plat = player.check_underneath(plats)
+                if plat is not None:
+                    player.pousar(plat)
+                    plataforma_atual = plat
+                    verificar_camera(plat)
+                    pontos = max(pontos, plats.index(plat))
+                else:
+                    player.plataforma_atual = None
+                    afundando = True
 
     # Afunda e volta para a plataforma inicial
     if afundando:
@@ -202,7 +216,7 @@ def jogo(eventos):
 
     atualizar_camera()
 
-    status = 5 if pontos == len(plats) - 6 else 2
+    status = 5 if chegou else 2
 
     tela.fill(AZUL_AGUA)
 
@@ -225,6 +239,7 @@ def jogo(eventos):
         if -RAIO <= tela_y <= ALTURA + RAIO:
             plat.desenhar_plat(tela, camera_y)
 
+    tela.blit(margem_final.superficie, (margem_final.x, margem_final.y - camera_y))
     tela.blit(margem1.superficie, (margem1.x, margem1.y))
     tela.blit(margem2.superficie, (margem2.x, margem2.y))
     player.desenhar_sap(tela, camera_y)

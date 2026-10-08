@@ -35,3 +35,17 @@ class Margem:
             pos_y = tela_y + y
             if 0 <= pos_x < tela.get_width() and 0 <= pos_y < tela.get_height():
                 setPixel(tela, pos_x, pos_y, cor)
+
+LARGURA_FINAL = 1500
+ALTURA_FINAL = 150
+
+class MargemFinal:
+    cor = MARGEM
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.superficie = pygame.Surface((LARGURA_FINAL, ALTURA_FINAL))
+
+    def draw(self):
+        Functions.scanline_fill(self.superficie, [(0, 0), (LARGURA_FINAL, 0), (LARGURA_FINAL, ALTURA_FINAL), (0, ALTURA_FINAL)], MARGEM)
