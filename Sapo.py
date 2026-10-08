@@ -98,8 +98,8 @@ class Sapo:
         self.pulando = False
         self.fator = 1.0
         self.plataforma_atual = plat
-        self.x = plat.x - self.largura // 2
         self.y = plat.y - self.altura // 2
+        self.x = plat.x - self.largura // 2
 
     def atualizar_pulo(self):
         if not self.pulando:

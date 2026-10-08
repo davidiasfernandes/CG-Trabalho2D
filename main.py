@@ -79,6 +79,7 @@ margem2.draw()
 
 player = Sapo(INITIAL_X, INITIAL_Y)
 player.pousar(plats[0])
+player.x = plats[0].x - player.largura // 2
 plataforma_atual = plats[0]
 
 pontos = 0
@@ -133,6 +134,7 @@ def resetar_sapo():
     global chegou
 
     player.pousar(plats[0])
+    player.x = plats[0].x - player.largura // 2
 
     plataforma_atual = plats[0]
 
@@ -188,6 +190,8 @@ def jogo(eventos):
             plat.move_x_asis()
 
     if player.pulando:
+        if plataforma_atual is not None and plataforma_atual.speed > 0:
+            player.move_alongside(plataforma_atual)
         player.atualizar_pulo()
         # Quando o pulo termina, chega na margem final, pousa se houver plataforma embaixo, senão afunda
         if not player.pulando:
