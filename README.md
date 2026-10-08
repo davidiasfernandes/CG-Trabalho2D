@@ -77,12 +77,13 @@ Toda a renderização do jogo passa por essa função. Ela escreve um pixel na s
 
 ```python
 def setPixel(superficie, x, y, cor):
-    # Aplica clipping antes de desenhar
+    x, y = int(x), int(y)
     if clip_atual:
         xmin, ymin, xmax, ymax = clip_atual
         if not (xmin <= x <= xmax and ymin <= y <= ymax):
             return
-    superficie.set_at((x, y), cor)
+    if 0 <= x < superficie.get_width() and 0 <= y < superficie.get_height():
+        superficie.set_at((x, y), cor)
 ```
 
 ---
@@ -94,10 +95,10 @@ def setPixel(superficie, x, y, cor):
 | Primitiva | Função | Uso no jogo |
 |-----------|--------|-------------|
 | **Linha (Bresenham)** | `bresenham()` (linha 18) | Arestas de polígonos (botões, barra de pulo, viewport) |
-| **Linha (DDA)** | `dda()` (linha 147) | Linhas decorativas na tela de fim de jogo |
-| **Círculo** | `desenhar_circulo()` (linha 51) | Vitórias-régias (plataformas) e sapo no minimapa |
-| **Elipse** | `desenhar_elipse()` (linha 75) | Elementos decorativos (flores) na tela de fim de jogo |
-| **Polígono** | `desenhar_poligono()` (linha 57) | Botões do menu, barra de carregamento, borda da viewport |
+| **Linha (DDA)** | `dda()` (linha 154) | Linhas decorativas na tela de fim de jogo |
+| **Círculo** | `desenhar_circulo()` (linha 58) | Vitórias-régias (plataformas) e sapo no minimapa |
+| **Elipse** | `desenhar_elipse()` (linha 82) | Elementos decorativos (flores) na tela de fim de jogo |
+| **Polígono** | `desenhar_poligono()` (linha 64) | Botões do menu, barra de carregamento, borda da viewport |
 
 ---
 
@@ -107,9 +108,9 @@ def setPixel(superficie, x, y, cor):
 
 | Algoritmo | Função | Uso no jogo |
 |-----------|--------|-------------|
-| **Flood Fill (iterativo)** | `flood_fill_iterativo()` (linha 216) | Preenchimento do fundo dos botões na tela de fim de jogo |
-| **Scanline Fill** | `scanline_fill()` (linha 104) | Preenchimento das margens laterais e da margem final; preenchimento do minimapa |
-| **Scanline Fill com Gradiente** | `scanline_fill_gradiente()` (linha 168) | Barra de carregamento do pulo (gradiente verde → amarelo → vermelho) |
+| **Flood Fill (iterativo)** | `flood_fill_iterativo()` (linha 229) | Preenchimento do fundo dos botões na tela de fim de jogo |
+| **Scanline Fill** | `scanline_fill()` (linha 111) | Preenchimento das margens laterais e da margem final; preenchimento do minimapa |
+| **Scanline Fill com Gradiente** | `scanline_fill_gradiente()` (linha 181) | Barra de carregamento do pulo (gradiente verde → amarelo → vermelho) |
 | **Preenchimento de Região** | `preencher_regiao()` (linha 13) | Fundo da viewport (limpa o minimapa a cada frame) |
 
 ---
@@ -120,9 +121,9 @@ def setPixel(superficie, x, y, cor):
 
 | Transformação | Função | Uso no jogo |
 |---------------|--------|-------------|
-| **Translação** | `translacao()` / `transladar_ponto()` (linhas 251, 297) | Movimento das plataformas, pulo do sapo, câmera |
-| **Rotação** | `rotacao()` (linha 260) | Sapo do menu rotaciona em direção ao cursor do mouse |
-| **Escala** | `escala()` / `escalar_pixels()` (linhas 81, 86) | Redimensionamento de sprites (sapo cresce durante o pulo), mapeamento de texturas |
+| **Translação** | `translacao()` / `transladar_ponto()` (linhas 264, 310) | Movimento das plataformas, pulo do sapo, câmera |
+| **Rotação** | `rotacao()` (linha 273) | Sapo do menu rotaciona em direção ao cursor do mouse |
+| **Escala** | `escala()` / `escalar_pixels()` (linhas 88, 93) | Redimensionamento de sprites (sapo cresce durante o pulo), mapeamento de texturas |
 
 Todas as transformações usam **coordenadas homogêneas** (matrizes 3×3) e a função `aplica_transformacao()` para multiplicar pontos pela matriz. A composição de transformações é feita por `multiplica_matrizes()`.
 
@@ -148,7 +149,7 @@ O fator de escala segue uma curva senoidal para dar a sensação de profundidade
 
 ### f) Janela e Viewport
 
-> **Arquivo:** `Requires/Functions.py` — `janela_viewport()` (linha 322) e `desenhar_viewport()` (linha 377)
+> **Arquivo:** `Requires/Functions.py` — `janela_viewport()` (linha 335) e `desenhar_viewport()` (linha 390)
 
 O jogo implementa a transformação **Janela → Viewport** com a cadeia clássica de matrizes:
 
@@ -162,22 +163,31 @@ Isso é usado para o **minimapa** no canto superior esquerdo, que projeta toda a
 
 ### g) Recorte de Cohen-Sutherland (Clipping)
 
-> **Arquivo:** `Requires/Functions.py` — variável `clip_atual` (linha 240) e verificação dentro de `setPixel()`
+> **Arquivo:** `Requires/Functions.py` — `cohen_sutherland_clip()` (linha 418), `compute_code()` (linha 406) e integração em `bresenham()` (linha 18) e `dda()` (linha 154) | `Menu.py` — `desenhar_linhas_fundo()`
 
-O recorte é aplicado **por pixel** no `setPixel()`: antes de escrever qualquer pixel, a função verifica se (x, y) está dentro da região retangular definida por `clip_atual`. A viewport do minimapa ativa o recorte durante sua renderização e o desativa ao terminar, garantindo que nenhum conteúdo extravase para fora da miniatura.
+O recorte de linhas utiliza o **algoritmo de Cohen-Sutherland** para recortar segmentos de reta geometricamente contra a janela de recorte ativa (`clip_atual`) antes da etapa de rasterização. Cada extremidade da reta recebe um código binário de 4 bits (`INSIDE`, `LEFT`, `RIGHT`, `BOTTOM`, `TOP`) e o algoritmo calcula iterativamente os pontos de interseção com as bordas da janela delimitadora, descartando trechos externos ou aceitando o segmento recortado.
+
+A integração é feita diretamente nas primitivas de rasterização de linha (`bresenham` e `dda`): quando uma região de recorte está ativa, a reta é recortada geometricamente antes de traçar qualquer pixel.
 
 ```python
-# Em desenhar_viewport():
-clip_atual = viewport    # ativa recorte
-conteudo()               # desenha conteúdo miniatura
-clip_atual = None        # desativa recorte
+# No início de bresenham() e dda():
+if clip_atual:
+    xmin, ymin, xmax, ymax = clip_atual
+    aceito, x0, y0, x1, y1 = cohen_sutherland_clip(x0, y0, x1, y1, xmin, ymin, xmax, ymax)
+    if not aceito:
+        return  # linha totalmente fora — descarta
+    x0, y0, x1, y1 = round(x0), round(y0), round(x1), round(y1)
 ```
+
+#### Aplicações Práticas no Jogo:
+1. **Fundo do Menu (`Menu.py`)**: Linhas diagonais suaves e estáticas são geradas com coordenadas que extrapolam amplamente os limites da tela (ex.: `y0 = -400`, `y1 = ALTURA + 400`, `x0 = -900`). O algoritmo de **Cohen-Sutherland calcula as interseções das retas com as 4 bordas da tela**, recortando geometricamente os segmentos externos antes da rasterização.
+2. **Minimapa (`main.py` / `Requires/Functions.py`)**: A função `desenhar_viewport()` define `clip_atual = viewport` durante a execução de `conteudo_mini()`, garantindo que retas de polígonos (como o retângulo da câmera) não extravasem a miniatura.
 
 ---
 
 ### h) Mapeamento de Textura
 
-> **Arquivos:** `Requires/Functions.py` — `escalar_pixels()` (linha 86) | `Sapo.py` | `fimdejogo.py`
+> **Arquivos:** `Requires/Functions.py` — `escalar_pixels()` (linha 93) | `Sapo.py` | `fimdejogo.py`
 
 O mapeamento de textura é feito pela **transformação inversa**: para cada pixel do destino, calcula-se o pixel correspondente na imagem original usando a matriz inversa de escala. Isso permite redimensionar sprites arbitrariamente sem distorção.
 

@@ -16,6 +16,13 @@ def preencher_regiao(superficie, xmin, ymin, xmax, ymax, cor):
             setPixel(superficie, x, y, cor)
 
 def bresenham(superficie, x0, y0, x1, y1, cor):
+    if clip_atual:
+        xmin, ymin, xmax, ymax = clip_atual
+        aceito, x0, y0, x1, y1 = cohen_sutherland_clip(x0, y0, x1, y1, xmin, ymin, xmax, ymax)
+        if not aceito:
+            return
+        x0, y0, x1, y1 = round(x0), round(y0), round(x1), round(y1)
+
     steep = abs(y1 - y0) > abs(x1 - x0)
     if steep:
         x0, y0 = y0, x0
@@ -145,6 +152,12 @@ def scanline_fill(superficie, pontos, cor_preenchimento):
                     setPixel(superficie, x, y, cor_preenchimento)
 
 def dda(superficie, x0, y0, x1, y1, cor):
+    if clip_atual:
+        xmin, ymin, xmax, ymax = clip_atual
+        aceito, x0, y0, x1, y1 = cohen_sutherland_clip(x0, y0, x1, y1, xmin, ymin, xmax, ymax)
+        if not aceito:
+            return
+
     dx = x1 - x0
     dy = y1 - y0
 
@@ -383,3 +396,57 @@ def desenhar_viewport(superficie, viewport, cor_borda, conteudo=None):
         conteudo()
     clip_atual = None
     desenhar_poligono(superficie, [(Vxmin, Vymin), (Vxmax, Vymin), (Vxmax, Vymax), (Vxmin, Vymax)], cor_borda)
+
+INSIDE = 0
+LEFT = 1
+RIGHT = 2
+BOTTOM = 4
+TOP = 8
+
+def compute_code(x, y, xmin, ymin, xmax, ymax):
+    code = INSIDE
+    if x < xmin:
+        code |= LEFT
+    elif x > xmax:
+        code |= RIGHT
+    if y < ymin:
+        code |= BOTTOM
+    elif y > ymax:
+        code |= TOP
+    return code
+
+def cohen_sutherland_clip(x1, y1, x2, y2, xmin, ymin, xmax, ymax):
+    code1 = compute_code(x1, y1, xmin, ymin, xmax, ymax)
+    code2 = compute_code(x2, y2, xmin, ymin, xmax, ymax)
+    accept = False
+
+    while True:
+        if code1 == 0 and code2 == 0:
+            accept = True
+            break
+        elif (code1 & code2) != 0:
+            break
+        else:
+            x, y = 0, 0
+            code_out = code1 if code1 != 0 else code2
+            if code_out & TOP:
+                x = x1 + (x2 - x1) * (ymax - y1) / (y2 - y1)
+                y = ymax
+            elif code_out & BOTTOM:
+                x = x1 + (x2 - x1) * (ymin - y1) / (y2 - y1)
+                y = ymin
+            elif code_out & RIGHT:
+                y = y1 + (y2 - y1) * (xmax - x1) / (x2 - x1)
+                x = xmax
+            elif code_out & LEFT:
+                y = y1 + (y2 - y1) * (xmin - x1) / (x2 - x1)
+                x = xmin
+
+            if code_out == code1:
+                x1, y1 = x, y
+                code1 = compute_code(x1, y1, xmin, ymin, xmax, ymax)
+            else:
+                x2, y2 = x, y
+                code2 = compute_code(x2, y2, xmin, ymin, xmax, ymax)
+
+    return accept, x1, y1, x2, y2

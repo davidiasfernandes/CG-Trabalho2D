@@ -2,7 +2,7 @@ import pygame
 from Requires import Functions
 from Sapo import Sapo
 
-from Requires.Functions import desenhar_poligono
+from Requires.Functions import desenhar_poligono, bresenham
 from Cores import VERDE_MUSGO, VERDE_ESCURO
 
 pygame.init()
@@ -18,6 +18,7 @@ clock = pygame.time.Clock()
 # Usamos SysFont com pixel art/arcade estilo padrão, ou None para a fonte padrão
 fonte_titulo = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 67)
 fonte_botao = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 36)
+fonte_info = pygame.font.Font("./Assets/Fonte-Pixel.ttf", 16)
 sapo_menu = Sapo(LARGURA // 2 - 450, 400, "./Assets/sapo_menu.png", 200)
 
 COR_TEXTO = (255, 255, 255)
@@ -66,10 +67,43 @@ def verificar_click(pos_mouse, status):
         return 6
     return status
 
+def desenhar_linhas_fundo():
+    """Desenha linhas diagonais suaves e estáticas de fundo que extrapolam as bordas da tela e
+    são recortadas pelo algoritmo de Cohen-Sutherland."""
+    # Define a janela de recorte na tela inteira
+    Functions.clip_atual = (0, 0, LARGURA - 1, ALTURA - 1)
+
+    espacamento = 65
+    inclinacao = 750
+    x_inicio = -900
+    x_fim = LARGURA + 900
+
+    cores = [
+        (40, 58, 48),
+        (32, 48, 40),
+        (48, 68, 56),
+    ]
+
+    for i, x in enumerate(range(x_inicio, x_fim, espacamento)):
+        # Coordenadas propositalmente geradas fora dos limites da janela
+        x0 = x
+        y0 = -400
+        x1 = x + inclinacao
+        y1 = ALTURA + 400
+
+        cor = cores[i % len(cores)]
+        # bresenham utiliza cohen_sutherland_clip internamente para recortar as retas
+        bresenham(screen, x0, y0, x1, y1, cor)
+
+    Functions.clip_atual = None
+
 def desenhar_menu(): 
     
     # Preenche o fundo do menu com uma cor sólida
-    screen.fill((50, 50, 50))  # Cinza
+    screen.fill((38, 40, 42))
+
+    # Desenha o padrão diagonal recortado com Cohen-Sutherland
+    desenhar_linhas_fundo()
 
     # Renderiza o título do menu
     titulo = fonte_titulo.render("Pula Webert!", True, COR_TEXTO)
